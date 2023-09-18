@@ -30,8 +30,8 @@ import java.util.regex.Pattern;
 @Component
 public class FileUtils {
 
-    @Value("${value.allow-access.air-studio}")
-    private String airStudioAccess;
+    @Value("#{'${value.allow-access.air-studio}'.split(',')}")
+    private List<String> airStudioAccess;
 
     @Value("#{'${value.allow-access.air-pai}'.split(',')}")
     private List<String> airPaiAccess;
@@ -497,7 +497,7 @@ public class FileUtils {
      * @return
      */
     public boolean isAllowAccess(String path, String userId) {
-        if (path.startsWith(airStudioAccess)) {
+        if (path.startsWith(airStudioAccess.get(0)) || path.startsWith(airStudioAccess.get(1))) {
             return true;
         }
 
