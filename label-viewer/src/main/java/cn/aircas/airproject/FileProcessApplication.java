@@ -1,15 +1,20 @@
 package cn.aircas.airproject;
 
-import org.mybatis.spring.annotation.MapperScan;
+import cn.aircas.airproject.listener.TomcatListener;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.context.ConfigurableApplicationContext;
 
-@EnableAsync
-@SpringBootApplication
-@MapperScan("cn.aircas.airproject.mapper")
+@SpringBootApplication(exclude = DataSourceAutoConfiguration.class)
 public class FileProcessApplication {
     public static void main(String[] args) {
-        SpringApplication.run(FileProcessApplication.class,args);
+
+        // 正常启动
+        SpringApplication.run(FileProcessApplication.class, args);
+
+        // 增加应用试用期
+        /*ConfigurableApplicationContext run = SpringApplication.run(FileProcessApplication.class, args);
+        TomcatListener.encryption(run);*/
     }
 }

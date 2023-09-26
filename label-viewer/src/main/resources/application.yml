@@ -1,72 +1,44 @@
 server:
-  port: 8003
+  port: 8088
   servlet:
     context-path: /file-process
-  tomcat:
-    uri-encoding: utf-8
 
 spring:
   servlet:
     multipart:
-      max-file-size: 1GB
-      max-request-size: 5GB
-  http:
-    encoding:
-      force: true
-      charset: utf-8
-      enabled: true
-  datasource:
-    driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://192.168.9.64:32189/geodl_iecas?useSSL=false&useUnicode=true&characterEncoding=utf8
-    username: iecas
-    password: 123456
+      max-file-size: 100GB  #单个文件数据大小
+      max-request-size: 1000GB #总文件大小
+#  datasource:
+#    password: 123456
+#    url: jdbc:postgresql://192.168.3.13:32189/geodl_iecas?useUnicode=true&characterEncoding=utf-8&serverTimezone=GMT%2b8&useSSL=false
+#    username: iecas
+#    driver-class-name: org.postgresql.Driver
+#  jpa:
+#    open-in-view: false
+#    show-sql: true
+#    properties:
+#      hibernate:
+#        temp:
+#          use_jdbc_metadata_defaults: false
+#        hbm2ddl:
+#          auto: update
 
-#mybatis plus 设置
-mybatis-plus:
-  type-aliases-package: cn.iecas.geoai.labelplatform.entity.domain
-  mapper-locations: classpath:mapper/*.xml
-  configuration:
-    jdbc-type-for-null: null
-    # 自动驼峰命名
-    map-underscore-to-camel-case: true
-  global-config:
-    # 关闭 mybatis-plus的 banner
-    banner: false
-    db-config:
-      id-type: input
-      update-strategy: not_null
-  # 配置控制台打印日志Debug
-  logging:
-    level:
-      cn.aircas.airproject.mapper: debug
-  debug: true
-  # 配置sql控制台输出
-  log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+#mybatis-plus配置
+#mybatis-plus:
+#  mapper-locations: classpath:mapper/*.xml
+#  configuration:
+#    map-underscore-to-camel-case: true
+#    logging:
+#      level:
+#        cn.aircas.fileManager.text.dao: debug
+#    debug: false
+#    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
 
-value:
-  api:
-    user-info: http://192.168.2.156:31151/api/v1/users/token_check
-    download: http://192.168.187.21:31153/api/v1/airengine/file_transfer/download/
-  noAccess:
-    - /root
-    - /mnt
-  allow-access:
-    air-studio: /var/nfs/general/data/AirPAI/AirPAI_Data/componentsD/
-    #air-pai: /var/nfs/general/data/airpipeline/base/external/,/template/,/code
-    air-pai: /mnt/zhisuan_nfs/KTY/airproject/data/airpipeline/base/external/,/template/,/code
 sys:
-  # rootDir: ./
-  rootDir: C:\Users\dell\Desktop\ddd
-
-# 定时任务配置，每周一凌晨0点清理已完成文件上传进度数据
-configtask:
-  cron: 0 0 0 ? * MON
-
-# 远程执行sudo命令密码配置
-sudo:
-  password: 123456
-
-# 临时文件保存路径
-temp:
-  download-path: /var/nfs/general/tempdownload
+  rootPath: C:\Users\dell\Desktop
+  rootDir: C:\Users\dell\Desktop
+  uploadRootPath: C:\Users\dell\Desktop
+  #rootPath: /home/data
+  #rootDir: /home/data
+  #uploadRootPath: /home/data
 

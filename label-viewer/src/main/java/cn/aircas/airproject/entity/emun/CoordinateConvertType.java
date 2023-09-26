@@ -1,0 +1,5 @@
+package cn.aircas.airproject.entity.emun;
+
+public enum CoordinateConvertType {
+    NO_ACTION, PIXEL_REVERSION, LONLAT_TO_PROJECTION, PROJECTION_TO_PIXEL, PROJECTION_TO_LONLAT, PIXEL_TO_LONLAT, PIXEL_TO_PROJECTION, LONLAT_TO_PIXEL
+}

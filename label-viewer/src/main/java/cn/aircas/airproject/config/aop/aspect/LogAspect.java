@@ -2,7 +2,6 @@ package cn.aircas.airproject.config.aop.aspect;
 
 import cn.aircas.airproject.config.aop.annotation.Log;
 import cn.aircas.airproject.entity.common.CommonResult;
-import cn.aircas.airproject.entity.emun.ResultCode;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
@@ -38,7 +37,7 @@ public class LogAspect {
             long timeConsuming = System.currentTimeMillis() - begin;
             log.info("{} 方法执行完毕，返回参数 {}, 共耗时 {} 毫秒", methodName, result,timeConsuming);
         }catch (Exception e){
-            result = new CommonResult<>().fail(ResultCode.FAIL).message(e.getMessage());
+            result = new CommonResult<>().fail().message(e.getMessage());
             log.error("{} 方法执行异常，返回参数 {}, 异常栈: {}", methodName, result, e.getStackTrace()[0]);
             throw e;
         }

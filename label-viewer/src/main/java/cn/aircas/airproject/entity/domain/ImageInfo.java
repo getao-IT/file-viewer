@@ -13,6 +13,7 @@ public class ImageInfo {
     private double minLat;
     private double maxLat;
     private String bit;
+    private String size;
     private CoordinateSystemType coordinateSystemType;
     /**
      * 影像投影信息

@@ -1,6 +1,5 @@
 package cn.aircas.airproject.entity.common;
 
-import cn.aircas.airproject.entity.emun.ResultCode;
 import lombok.Data;
 import org.springframework.http.HttpStatus;
 
@@ -8,13 +7,13 @@ import org.springframework.http.HttpStatus;
 public class CommonResult<T> {
     private T data;
 
-    private int code;
+    private HttpStatus code;
 
     private String message;
 
     private static final long serialVersionUID = -4683516289108960739L;
 
-    private void code(int httpStatus){
+    private void code(HttpStatus httpStatus){
         this.code = httpStatus;
     }
 
@@ -28,23 +27,23 @@ public class CommonResult<T> {
         return this;
     }
 
-    public CommonResult<T> success(ResultCode resultCode){
-        code(resultCode.getCode());
+    public CommonResult<T> success(){
+        code(HttpStatus.OK);
         return this;
     }
 
-    public CommonResult<T> fail(ResultCode resultCode){
-        code(resultCode.getCode());
+    public CommonResult<T> fail(){
+        code(HttpStatus.INTERNAL_SERVER_ERROR);
         return this;
     }
 
-    public CommonResult<T> setCode(ResultCode resultCode){
-        //if (code.toLowerCase().equals("error"))
-            code(resultCode.getCode());
+    public CommonResult<T> setCode(String code){
+        if (code.toLowerCase().equals("error"))
+            code(HttpStatus.INTERNAL_SERVER_ERROR);
         return this;
     }
 
-    public CommonResult<T> setCode(int httpStatus){
+    public CommonResult<T> setCode(HttpStatus httpStatus){
         this.code = httpStatus;
         return this;
     }
