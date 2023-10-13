@@ -42,3 +42,7 @@ sys:
   #rootDir: /home/data
   #uploadRootPath: /home/data
 
+value:
+  static:
+    path-pattern: /static/file/**
+    static-locations: file:c:/

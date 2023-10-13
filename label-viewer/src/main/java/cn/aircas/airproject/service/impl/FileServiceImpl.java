@@ -208,10 +208,10 @@ public class FileServiceImpl implements FileService {
 
     @Override
     public String rename(String srcPath, String destPath) {
-        String src = FileUtils.getStringPath(this.rootPath, srcPath);
-        File srcFile = new File(src);
-        String dest = FileUtils.getStringPath(this.rootPath, destPath);
-        File destFile = new File(dest);
+        //String src = FileUtils.getStringPath(this.rootPath, srcPath);
+        File srcFile = new File(srcPath);
+        //String dest = FileUtils.getStringPath(this.rootPath, destPath);
+        File destFile = new File(destPath);
         if (destFile.exists()) {
             return "文件名称已存在";
         }

@@ -102,7 +102,11 @@
             <artifactId>gdal</artifactId>
             <version>3.0.0</version>
         </dependency>
-
+        <dependency>
+            <groupId>cn.aircas</groupId>
+            <artifactId>aircasUtils</artifactId>
+            <version>1.2.3</version>
+        </dependency>
         <dependency>
             <groupId>net.sf.json-lib</groupId>
             <artifactId>json-lib</artifactId>
