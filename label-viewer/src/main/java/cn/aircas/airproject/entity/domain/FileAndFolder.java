@@ -10,7 +10,6 @@ public class FileAndFolder {
     private String name;
     private String path;
     private Boolean isFile;
-    private String size;
     private Date lastModified;
     private String extension;
 }

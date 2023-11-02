@@ -78,6 +78,21 @@ public class Slice {
      * 重复的目标
      */
     private Map<String, Boolean> sameNames;
+
+    /**
+     * 是否生成XML
+     */
+    private Boolean takeLabelXml;
+
+    /**
+     * 是否保留空白切片
+     */
+    private Boolean retainBlankSlice;
+
+    /**
+     * xml坐标类型
+     */
+    private String coordinateType;
 }
 
 

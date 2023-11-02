@@ -3,6 +3,7 @@ package cn.aircas.airproject.service.impl;
 import cn.aircas.airproject.entity.common.CommonResult;
 import cn.aircas.airproject.entity.common.PageResult;
 import cn.aircas.airproject.entity.domain.FileSearchParam;
+import cn.aircas.airproject.entity.domain.Slice;
 import cn.aircas.airproject.entity.emun.FileType;
 import cn.aircas.airproject.entity.emun.SourceFileType;
 import cn.aircas.airproject.service.FileService;
@@ -18,12 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.HttpServletResponse;
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.*;
 
 
@@ -98,33 +94,22 @@ public class FileServiceImpl implements FileService {
 
     /**
      * 裁切影像得到切片图片
-     * @param fileType
-     * @param imagePath
-     * @param minLon
-     * @param minLat
-     * @param width
-     * @param height
-     * @param sliceInsertPath
+     * @param slice
      */
     @Override
-    public void makeImageSlice(SourceFileType fileType, String imagePath, double minLon, double minLat, int width, int height, String sliceInsertPath, Boolean storage) {
-        service.makeImageGeoSlice(fileType, imagePath, minLon, minLat, width, height, sliceInsertPath, storage);
+    public void makeImageSlice(Slice slice) {
+        service.makeImageGeoSlice(slice);
     }
 
 
     /**
      * 裁切影像得到切片图片
-     * @param fileType
-     * @param imagePath
-     * @param width
-     * @param height
-     * @param sliceInsertPath
-     * @param step
-     * @return
+     * @param slice
      */
     @Override
-    public void makeImageAllGeoSlice(SourceFileType fileType, String imagePath, int width, int height, String sliceInsertPath, int step, Boolean storage) {
-        service.makeImageAllGeoSlice(fileType, imagePath, width, height, sliceInsertPath, step, storage);
+    public void makeImageAllGeoSlice(Slice slice) {
+        service.makeImageAllGeoSlice(slice.getFileType(), slice.getImagePath(), slice.getWidth(), slice.getHeight(),
+                slice.getSliceInsertPath(), slice.getStep(), slice.getStorage(), slice.getRetainBlankSlice(), slice.getTakeLabelXml(),slice.getCoordinateType());
     }
 
 
@@ -205,58 +190,4 @@ public class FileServiceImpl implements FileService {
         fileSearchParam.setEndTime(calendar.getTime());
     }
 
-
-    @Override
-    public String rename(String srcPath, String destPath) {
-        //String src = FileUtils.getStringPath(this.rootPath, srcPath);
-        File srcFile = new File(srcPath);
-        //String dest = FileUtils.getStringPath(this.rootPath, destPath);
-        File destFile = new File(destPath);
-        if (destFile.exists()) {
-            return "文件名称已存在";
-        }
-        if (srcFile.renameTo(destFile)) {
-            return "重命名成功";
-        }
-        return "重命名失败";
-    }
-
-    @Override
-    public boolean download(String filePath, HttpServletResponse response) {
-        String downloadPath = FileUtils.getStringPath(this.rootPath, filePath);
-        File file = new File(downloadPath);
-        try {
-            if (!file.getParentFile().exists()) {
-                Files.createDirectory(Paths.get(file.getParent()));
-            }
-            // 下载服务器文件
-            response.setContentType("application/octet-stream");
-            response.setHeader("content-type","application/octet-stream");
-            response.setHeader("Content-Disposition","attachment;filename=users_info.csv");
-            response.setCharacterEncoding("UTF-8");
-            BufferedInputStream inputStream = new BufferedInputStream(new FileInputStream(file));
-            ServletOutputStream outputStream = response.getOutputStream();
-            outputStream.write(new byte[]{(byte)0xEF,(byte)0xBB,(byte)0xBF});
-            int len = 0;
-            byte[] buffer = new byte[1024];
-            while ((len=inputStream.read(buffer))!= -1) {
-                outputStream.write(buffer, 0, len);
-            }
-            if (outputStream != null) {
-                outputStream.close();
-            }
-            if (inputStream != null) {
-                inputStream.close();
-            }
-            // 删除临时文件
-            //Files.delete(Paths.get(fileSavePath));
-        } catch (FileNotFoundException e) {
-            log.error("FileNotFoundException 文件不存在异常：{} ", e.getMessage());
-            return false;
-        } catch (IOException e) {
-            log.error("IOException IO异常：{} ", e.getMessage());
-            return false;
-        }
-        return true;
-    }
 }

@@ -130,7 +130,6 @@ public class LabelProjectServiceImpl implements LabelProjectService {
                 FileAndFolder fileAndFolder = new FileAndFolder();
                 fileAndFolder.setName(file.getName());
                 fileAndFolder.setIsFile(file.isFile());
-                fileAndFolder.setSize(cn.aircas.utils.file.FileUtils.fileSizeToString(file.length()));
                 fileAndFolder.setPath(relativePath);
                 fileAndFolder.setLastModified(new Date(file.lastModified()));
                 if (file.isFile()){

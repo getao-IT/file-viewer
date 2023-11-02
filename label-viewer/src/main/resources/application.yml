@@ -1,5 +1,5 @@
 server:
-  port: 8088
+  port: 8075
   servlet:
     context-path: /file-process
 
@@ -42,7 +42,3 @@ sys:
   #rootDir: /home/data
   #uploadRootPath: /home/data
 
-value:
-  static:
-    path-pattern: /static/file/**
-    static-locations: file:c:/

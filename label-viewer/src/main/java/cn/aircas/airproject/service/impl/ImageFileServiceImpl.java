@@ -1,11 +1,16 @@
 package cn.aircas.airproject.service.impl;
 
+import cn.aircas.airproject.entity.LabelFile.XMLLabelObjectInfo;
 import cn.aircas.airproject.entity.common.PageResult;
 import cn.aircas.airproject.entity.domain.FileSearchParam;
 import cn.aircas.airproject.entity.domain.Image;
 import cn.aircas.airproject.entity.domain.ImageSearchParam;
+import cn.aircas.airproject.entity.domain.Slice;
 import cn.aircas.airproject.entity.emun.SourceFileType;
 import cn.aircas.airproject.service.FileTypeService;
+import cn.aircas.airproject.utils.GeoUtils;
+import cn.aircas.airproject.utils.ImageSliceUtils;
+import cn.aircas.airproject.utils.XMLUtils;
 import cn.aircas.utils.date.DateUtils;
 import cn.aircas.utils.file.FileUtils;
 import cn.aircas.utils.image.ImageInfo;
@@ -21,6 +26,10 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.vfs2.FileName;
+import org.gdal.gdal.gdal;
+import org.locationtech.jts.geom.*;
+import org.locationtech.jts.geom.Polygon;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -120,11 +129,18 @@ public class ImageFileServiceImpl implements FileTypeService {
      * @param sliceInsertPath
      * @return
      */
-    public void makeImageAllGeoSlice(SourceFileType fileType, String imagePath, int width, int height, String sliceInsertPath, int step, Boolean storage) {
+    public void makeImageAllGeoSlice(SourceFileType fileType, String imagePath, int width, int height,
+                                     String sliceInsertPath, int step, Boolean storage, Boolean retainBlankSlice, Boolean takeLabelXml,String coordType) {
         List<String> slicePathList = new ArrayList<>();
 
         //Image image = this.getById(id);
         String filePath = FileUtils.getStringPath(this.rootPath, imagePath);
+
+        String xmlPath = filePath.replace(FilenameUtils.getExtension(filePath), "xml");
+        XMLLabelObjectInfo xmlLabelObjectInfo = null;
+        if (new File(xmlPath).exists()) {
+            xmlLabelObjectInfo = XMLUtils.parseXMLFromFile(XMLLabelObjectInfo.class, xmlPath);
+        }
         //this.rootPath = "C:\\Users\\dell\\Desktop";
         //String filePath = "C:\\Users\\dell\\Desktop\\image\\3.tiff";
         File file = new File(filePath);
@@ -148,6 +164,26 @@ public class ImageFileServiceImpl implements FileTypeService {
                 sliceInsertPath = FileUtils.getStringPath(savePath, FilenameUtils.removeExtension(new File(filePath).getName()))
                         + "_slice_" + count + extend;
                 double[] range = new double[]{currentWidth, currentHeight, nextWidth, nextHeight};
+
+                // 是否生成XML
+                if (takeLabelXml) {
+                    if (xmlLabelObjectInfo != null) {
+                        // 是否保留空白切片
+                        double[] newRange = range;
+                        if (coordType.equalsIgnoreCase("GEOGCS")) {
+                            double[] newRang1 = GeoUtils.pixel2Coordinate(newRange[0], newRange[1], filePath, GeoUtils.COORDINATE_LONLAT);
+                            double[] newRang2 = GeoUtils.pixel2Coordinate(newRange[2], newRange[3], filePath, GeoUtils.COORDINATE_LONLAT);
+                            newRange = new double[]{newRang1[0], newRang1[1], newRang2[0], newRang2[1]};
+                        }
+                        boolean blankSlece = ImageSliceUtils.isBlankSlece(xmlLabelObjectInfo, newRange[0], newRange[2], newRange[1], newRange[3]);
+                        if (blankSlece && !retainBlankSlice) {
+                            continue;
+                        }
+                        newRange = ImageSliceUtils.getBoundaryFromArr(newRange);
+                        double[] labelRange = new double[]{newRange[0], newRange[1], newRange[2], newRange[3]};
+                        takeSliceXml(filePath, sliceInsertPath, labelRange);
+                    }
+                }
                 SliceGenerateUtil.generateSlice(range, filePath, sliceInsertPath, true);
                 slicePathList.add(sliceInsertPath);
                 currentHeight = nextHeight;
@@ -169,27 +205,43 @@ public class ImageFileServiceImpl implements FileTypeService {
 
     /**
      * 保留经纬度信息，裁切影像得到切片图片
-     * @param fileType
-     * @param imagePath
-     * @param minLon
-     * @param minLat
-     * @param width
-     * @param height
-     * @param sliceInsertPath
+     * @param slice 切片存储信息
      * @return
      */
-    public void makeImageGeoSlice(SourceFileType fileType, String imagePath, double minLon, double minLat, int width, int height, String sliceInsertPath, Boolean storage) {
-        String filePath = FileUtils.getStringPath(this.rootPath, imagePath);
+    public void makeImageGeoSlice(Slice slice) {
+        String filePath = FileUtils.getStringPath(this.rootPath, slice.getImagePath());
         //String filePath = "C:\\Users\\dell\\Desktop\\image\\3.tiff";
         File file = new File(filePath);
-        double minX = minLon;
-        double minY = minLat;
-        double maxX = minLon + width;
-        double maxY = minLat + height;
+        double minX = slice.getMinLon();
+        double minY = slice.getMinLat();
+        double maxX = slice.getMinLon() + slice.getWidth();
+        double maxY = slice.getMinLat() + slice.getHeight();
         String extend = file.getName().substring(file.getName().lastIndexOf("."));
-        sliceInsertPath = FileUtils.getStringPath(this.rootPath, sliceInsertPath) + extend;
+        String sliceInsertPath = FileUtils.getStringPath(this.rootPath, slice.getSliceInsertPath()) + extend;
         //sliceInsertPath = "C:\\Users\\dell\\Desktop\\image\\3-slice1.tiff";
         double[] range = new double[]{minX, minY, maxX, maxY};
+
+        // 是否生成XML
+        if (slice.getTakeLabelXml()) {
+            // 是否保留空白切片
+            String xmlPath = filePath.replace(FilenameUtils.getExtension(filePath), "xml");
+            if (new File(xmlPath).exists()) {
+                XMLLabelObjectInfo xmlLabelObjectInfo = XMLUtils.parseXMLFromFile(XMLLabelObjectInfo.class, xmlPath);
+                double[] newRang = range;
+                if (slice.getCoordinateType().equalsIgnoreCase("GEODEGREE")) {
+                    double[] newRang1 = GeoUtils.pixel2Coordinate(range[0], range[1], filePath, GeoUtils.COORDINATE_LONLAT);
+                    double[] newRang2 = GeoUtils.pixel2Coordinate(range[2], range[3], filePath, GeoUtils.COORDINATE_LONLAT);
+                    newRang = new double[]{newRang1[0],newRang1[1],newRang2[0],newRang2[1]};
+                }
+                boolean blankSlece = ImageSliceUtils.isBlankSlece(xmlLabelObjectInfo, newRang[0], newRang[2], newRang[1], newRang[3]);
+                if (blankSlece && !slice.getRetainBlankSlice()) {
+                    return;
+                }
+                takeSliceXml(filePath, sliceInsertPath, newRang);
+            }
+        }
+
+        // 生成切片
         SliceGenerateUtil.generateSlice(range, filePath, sliceInsertPath, true);
 
         // 切片入库
@@ -200,6 +252,67 @@ public class ImageFileServiceImpl implements FileTypeService {
         log.info("生成切片成功，路径：{}, ", sliceInsertPath);
     }
 
+    /**
+     * 生成单张切片对应XML
+     * @param filePath
+     * @param slicePath
+     * @param range
+     */
+    public void takeSliceXml(String filePath, String slicePath, double[] range) {
+        String xmlPath = filePath.replace(FilenameUtils.getExtension(filePath), "xml");
+        XMLLabelObjectInfo xmlLabelObjectInfo = XMLUtils.parseXMLFromFile(XMLLabelObjectInfo.class, xmlPath);
+        List<XMLLabelObjectInfo.XMLLabelObject> xmlLabelObjectList = xmlLabelObjectInfo.getXMLLabelObjectList();
+        List<XMLLabelObjectInfo.XMLLabelObject> sliceXmlLabelObject = new ArrayList<>();
+        GeometryFactory geometryFactory = new GeometryFactory(new PrecisionModel(PrecisionModel.FLOATING), 4326);
+        /*double[] newRang = range;
+        if (xmlLabelObjectInfo.getCoordinate().equalsIgnoreCase("GEODEGREE")) {
+            double[] newRang1 = GeoUtils.pixel2Coordinate(range[0], range[1], filePath, GeoUtils.COORDINATE_LONLAT);
+            double[] newRang2 = GeoUtils.pixel2Coordinate(range[2], range[3], filePath, GeoUtils.COORDINATE_LONLAT);
+            newRang = new double[]{newRang1[0],newRang1[1],newRang2[0],newRang2[1]};
+        }*/
+        ImageSliceUtils.getBoundaryFromArr(range);
+        Polygon slicePolygon = geometryFactory.createPolygon(new Coordinate[]{
+                new Coordinate(range[0], range[1]), new Coordinate(range[0], range[3]), new Coordinate(range[2], range[3]), new Coordinate(range[2], range[1]), new Coordinate(range[0], range[1])
+        });
+        for (int i = 0; i < xmlLabelObjectList.size(); i++) {
+            XMLLabelObjectInfo.XMLLabelObject xmlLabelObject = xmlLabelObjectList.get(i);
+            List<String> point = xmlLabelObject.getPoints().getPoint();
+            /*if (xmlLabelObject.getCoordinate().equalsIgnoreCase("geodegree"))
+                point = ImageSliceUtils.convertPixelToLonlatFromPoints(filePath, point, GeoUtils.COORDINATE_LONLAT);
+            if (xmlLabelObject.getCoordinate().equalsIgnoreCase("projection"))
+                point = ImageSliceUtils.convertPixelToLonlatFromPoints(filePath, point, GeoUtils.COORDINATE_PROJECTION);*/
+            //double[] boundary = ImageSliceUtils.getBoundaryFromPoints(point);
+            List<double[]> doubPoint = ImageSliceUtils.stringPointsToDouble(point);
+            boolean inSlice = ImageSliceUtils.isInSlice(doubPoint, slicePolygon, geometryFactory);
+            if (!inSlice) {
+                continue;
+            }
+
+            Coordinate[] labelCoord = new Coordinate[doubPoint.size()+1];
+            for (int i1 = 0; i1 < doubPoint.size(); i1++) {
+                labelCoord[i1] = new Coordinate(doubPoint.get(i1)[0], doubPoint.get(i1)[1]);
+            }
+            labelCoord[labelCoord.length-1] = labelCoord[0]; // g构建集合对象需要形成封闭的线
+            Polygon labelPolygon = geometryFactory.createPolygon(labelCoord);
+            Coordinate[] coordinates = ImageSliceUtils.getIntersections(slicePolygon, labelPolygon);
+            if (coordinates != null) { // 更新与切片相交的标注的交点坐标
+                point.clear();
+                for (int i1 = 0; i1 < coordinates.length - 1; i1++) {
+                    if (xmlLabelObject.getCoordinate().equalsIgnoreCase("pixel")) {
+                        point.add(ImageSliceUtils.excursionCoordIfPixel(coordinates[i1], range));
+                    } else {
+                        point.add(ImageSliceUtils.coordinateToPoint(coordinates[i1]));
+                    }
+                    //point.add(ImageSliceUtils.coordinateToPoint(coordinates[i1]));
+                }
+            }
+            sliceXmlLabelObject.add(xmlLabelObject);
+        }
+        xmlLabelObjectInfo.setXMLLabelObjectList(sliceXmlLabelObject);
+        String saveXmlPath = slicePath.replace(FilenameUtils.getExtension(slicePath), "xml");
+        XMLUtils.toXMLFile(saveXmlPath, xmlLabelObjectInfo);
+        log.info("生成切片 {} 并保存XML文件 {} 成功 ", slicePath, saveXmlPath);
+    }
 
     private Image parseFileInfo(String filePath, Image sourceImage) {
         File imageFile = new File(filePath);
@@ -244,11 +357,21 @@ public class ImageFileServiceImpl implements FileTypeService {
             e.printStackTrace();
         }*/
 
-        ImageFileServiceImpl service = new ImageFileServiceImpl();
+        /*ImageFileServiceImpl service = new ImageFileServiceImpl();
         String path = "image\\3.tiff";
         service.makeImageGeoSlice(SourceFileType.IMAGE, path, 500, 500, 2000, 2000, "", true);
         //service.makeImageAllGeoSlice(FileType.IMAGE, 1, 2000, 2000, "image\\slice\\", 2000);
-        System.out.println("后台处理中。。。");
+        System.out.println("后台处理中。。。");*/
+
+        /*String filePath = "C:\\Users\\dell\\Downloads\\val_13.xml";
+        Slice slice = new Slice();
+        slice.setTakeLabelXml(true);
+        double minX = 170.0;
+        double minY = 212.0;
+        double maxX = 624.0;
+        double maxY = 628.0;
+        ImageFileServiceImpl service = new ImageFileServiceImpl();
+        service.takeSliceXml(filePath, filePath, minX, maxX, minY, maxY,0,0);*/
     }
 
 }

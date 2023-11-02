@@ -8,8 +8,6 @@ import com.alibaba.fastjson.JSONObject;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-
-import javax.servlet.http.HttpServletResponse;
 import java.util.List;
 
 
@@ -26,8 +24,7 @@ public class FileController {
     @Log(value = "裁切影像指定位置得到切片图片")
     @PostMapping("/custom")
     public CommonResult<String> makeImageSlice(@RequestBody Slice slice) {
-        this.fileService.makeImageSlice(slice.getFileType(), slice.getImagePath(), slice.getMinLon(),
-                slice.getMinLat(), slice.getWidth(), slice.getHeight(), slice.getSliceInsertPath(), slice.getStorage());
+        this.fileService.makeImageSlice(slice);
         return new CommonResult<String>().success().message("裁切任务后台处理中...");
     }
 
@@ -35,8 +32,7 @@ public class FileController {
     @Log(value = "根据宽高裁切影像所有位置得到切片图片")
     @PostMapping("/slice")
     public CommonResult<String> makeImageAllGeoSlice(@RequestBody Slice slice) {
-        this.fileService.makeImageAllGeoSlice(slice.getFileType(), slice.getImagePath(), slice.getWidth(),
-                slice.getHeight(), slice.getSliceInsertPath(), slice.getStep(), slice.getStorage());
+        this.fileService.makeImageAllGeoSlice(slice);
         return new CommonResult<String>().success().message("裁切任务后台处理中...");
     }
 
@@ -103,34 +99,6 @@ public class FileController {
     public CommonResult<Boolean> createSlicePaths(String savePath, String filePath, int width, int height, int step) {
         Boolean result = fileService.createSlicePaths(savePath, filePath, width, height, step);
         return new CommonResult<Boolean>().success().data(result).message("获取是否有重复文件");
-    }
-
-
-    /**
-     * 重命名文件、文件夹
-     * @param srcPath
-     * @param destPath
-     * @return
-     */
-    @Log("重命名")
-    @PutMapping("/rename")
-    public CommonResult<String> rename(String srcPath, String destPath) {
-        String result = fileService.rename(srcPath, destPath);
-        return new CommonResult<String>().success().message(result);
-    }
-
-
-    /**
-     * 下载文件
-     * @param filePath 文件路径
-     * @param response 响应
-     * @return
-     */
-    @Log("重命名")
-    @GetMapping ("/download")
-    public CommonResult<String> download(String filePath, HttpServletResponse response) {
-        boolean result = fileService.download(filePath, response);
-        return new CommonResult<String>().success().message(result ? "文件下载成功" : "文件下载失败");
     }
 
 }
