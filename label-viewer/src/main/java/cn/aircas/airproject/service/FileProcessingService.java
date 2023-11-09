@@ -1,7 +1,9 @@
 package cn.aircas.airproject.service;
 
 
+import cn.aircas.airproject.utils.OpenCV;
 
 public interface FileProcessingService {
-    Integer formatConverter(int fileId, String filePath, String outputPath, String format, String source, String keywords, boolean isPublic);
+    Integer formatConverter(String progressId ,String filePath, String format);
+    void greyConverter(String src, OpenCV.NormalizeType type);
 }

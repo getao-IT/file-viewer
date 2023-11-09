@@ -2,7 +2,14 @@ import cn.aircas.airproject.FileProcessApplication;
 import cn.aircas.airproject.controller.LabelProjectController;
 import cn.aircas.airproject.entity.domain.SaveLabelRequest;
 import cn.aircas.airproject.entity.emun.LabelPointType;
+import cn.aircas.airproject.service.FileProcessingService;
 import cn.aircas.airproject.service.LabelProjectService;
+import cn.aircas.airproject.service.impl.FileProcessingServiceImpl;
+import cn.aircas.airproject.utils.ImageUtil;
+import cn.aircas.airproject.utils.OpenCV;
+import org.gdal.gdal.ProgressCallback;
+import org.gdal.gdal.gdal;
+import org.gdal.ogr.ogr;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -17,6 +24,9 @@ public class Test {
     @Autowired
     private LabelProjectService labelProjectService;
 
+    @Autowired
+    private FileProcessingService server;
+
     @org.junit.Test
     public void test() throws IOException {
         SaveLabelRequest saveLabelRequest = new SaveLabelRequest();
@@ -27,6 +37,30 @@ public class Test {
         saveLabelRequest.setLabelPointType(LabelPointType.GEODEGREE);
         labelProjectService.saveLabel(saveLabelRequest);
 
+    }
+
+    @org.junit.Test
+    public void testFileProcess() {
+        String filePath = "C:\\Users\\Administrator\\Desktop\\temp\\无标题.jpg";
+        /*server.formatConverter(filePath, "PNG");
+        System.out.println("格式转换成功！");*/
+        server.greyConverter(filePath, OpenCV.NormalizeType.MINMAX);
+        System.out.println("灰度转换成功！");
+    }
+
+
+    @org.junit.Test
+    public void testGdal() {
+        String inputPath = "C:\\Users\\Administrator\\Desktop\\temp\\RD0100_DataCloud_Guangzhou_jiangmen_heshan_2023H1_4IM.tiled.deflate.tif";
+        String outputPath = "C:\\Users\\Administrator\\Desktop\\temp";
+        String format = "PNG";
+        String s = ImageUtil.formatConvertor("111",inputPath, outputPath, format);
+        System.out.println(s);
+    }
+
+    @org.junit.Test
+    public void testGdalProgress() {
+        System.out.println();
     }
 
 }

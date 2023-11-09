@@ -3,8 +3,11 @@ package cn.aircas.airproject.controller;
 import cn.aircas.airproject.config.aop.annotation.Log;
 import cn.aircas.airproject.entity.common.CommonResult;
 import cn.aircas.airproject.entity.domain.Slice;
+import cn.aircas.airproject.service.FileProcessingService;
 import cn.aircas.airproject.service.FileService;
+import cn.aircas.airproject.utils.OpenCV;
 import com.alibaba.fastjson.JSONObject;
+import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -22,12 +25,14 @@ public class FileController {
     @Autowired
     FileService fileService;
 
+    @Autowired
+    FileProcessingService fileProcessingService;
+
 
     @Log(value = "裁切影像指定位置得到切片图片")
     @PostMapping("/custom")
     public CommonResult<String> makeImageSlice(@RequestBody Slice slice) {
-        this.fileService.makeImageSlice(slice.getFileType(), slice.getImagePath(), slice.getMinLon(),
-                slice.getMinLat(), slice.getWidth(), slice.getHeight(), slice.getSliceInsertPath(), slice.getStorage());
+        this.fileService.makeImageSlice(slice);
         return new CommonResult<String>().success().message("裁切任务后台处理中...");
     }
 
@@ -35,8 +40,7 @@ public class FileController {
     @Log(value = "根据宽高裁切影像所有位置得到切片图片")
     @PostMapping("/slice")
     public CommonResult<String> makeImageAllGeoSlice(@RequestBody Slice slice) {
-        this.fileService.makeImageAllGeoSlice(slice.getFileType(), slice.getImagePath(), slice.getWidth(),
-                slice.getHeight(), slice.getSliceInsertPath(), slice.getStep(), slice.getStorage());
+        this.fileService.makeImageAllGeoSlice(slice);
         return new CommonResult<String>().success().message("裁切任务后台处理中...");
     }
 
@@ -115,8 +119,7 @@ public class FileController {
     @Log("重命名")
     @PutMapping("/rename")
     public CommonResult<String> rename(String srcPath, String destPath) {
-        String result = fileService.rename(srcPath, destPath);
-        return new CommonResult<String>().success().message(result);
+        return fileService.rename(srcPath, destPath);
     }
 
 
@@ -133,4 +136,20 @@ public class FileController {
         return new CommonResult<String>().success().message(result ? "文件下载成功" : "文件下载失败");
     }
 
+    @Log(value = "图片格式转换")
+    @ApiOperation("图片格式转换")
+    @PostMapping("/formatConverter")
+    public CommonResult<String> formatConverter(String progressId, String filePath, String format) {
+        Integer code = this.fileProcessingService.formatConverter(progressId, filePath, format);
+        return new CommonResult<String>().success().data(String.valueOf(code)).message("格式转换后台进行中");
+    }
+
+
+    @Log(value = "图片灰度转换")
+    @ApiOperation("图片灰度转换")
+    @PostMapping("/greyConverter")
+    public CommonResult<String> greyConverter(String src) {
+        this.fileProcessingService.greyConverter(src, OpenCV.NormalizeType.MINMAX);
+        return new CommonResult<String>().success().message("图片灰度转换成功");
+    }
 }

@@ -3,6 +3,7 @@ package cn.aircas.airproject.service.impl;
 import cn.aircas.airproject.entity.common.CommonResult;
 import cn.aircas.airproject.entity.common.PageResult;
 import cn.aircas.airproject.entity.domain.FileSearchParam;
+import cn.aircas.airproject.entity.domain.Slice;
 import cn.aircas.airproject.entity.emun.FileType;
 import cn.aircas.airproject.entity.emun.SourceFileType;
 import cn.aircas.airproject.service.FileService;
@@ -98,33 +99,23 @@ public class FileServiceImpl implements FileService {
 
     /**
      * 裁切影像得到切片图片
-     * @param fileType
-     * @param imagePath
-     * @param minLon
-     * @param minLat
-     * @param width
-     * @param height
-     * @param sliceInsertPath
+     * @param slice
      */
     @Override
-    public void makeImageSlice(SourceFileType fileType, String imagePath, double minLon, double minLat, int width, int height, String sliceInsertPath, Boolean storage) {
-        service.makeImageGeoSlice(fileType, imagePath, minLon, minLat, width, height, sliceInsertPath, storage);
+    public void makeImageSlice(Slice slice) {
+        service.makeImageGeoSlice(slice);
     }
 
 
     /**
      * 裁切影像得到切片图片
-     * @param fileType
-     * @param imagePath
-     * @param width
-     * @param height
-     * @param sliceInsertPath
-     * @param step
+     * @Params slice
      * @return
      */
     @Override
-    public void makeImageAllGeoSlice(SourceFileType fileType, String imagePath, int width, int height, String sliceInsertPath, int step, Boolean storage) {
-        service.makeImageAllGeoSlice(fileType, imagePath, width, height, sliceInsertPath, step, storage);
+    public void makeImageAllGeoSlice(Slice slice) {
+        service.makeImageAllGeoSlice(slice.getFileType(), slice.getImagePath(), slice.getWidth(), slice.getHeight(),
+                slice.getSliceInsertPath(), slice.getStep(), slice.getStorage(), slice.getRetainBlankSlice(), slice.getTakeLabelXml(),slice.getCoordinateType());
     }
 
 
@@ -207,18 +198,18 @@ public class FileServiceImpl implements FileService {
 
 
     @Override
-    public String rename(String srcPath, String destPath) {
+    public CommonResult<String> rename(String srcPath, String destPath) {
         //String src = FileUtils.getStringPath(this.rootPath, srcPath);
         File srcFile = new File(srcPath);
         //String dest = FileUtils.getStringPath(this.rootPath, destPath);
         File destFile = new File(destPath);
         if (destFile.exists()) {
-            return "文件名称已存在";
+            return new CommonResult<String>().setCode("500").data("destPath: "+destPath).message("文件名称已存在");
         }
         if (srcFile.renameTo(destFile)) {
-            return "重命名成功";
+            return new CommonResult<String>().setCode("200").data("destPath: "+destPath).message("重命名成功");
         }
-        return "重命名失败";
+        return new CommonResult<String>().setCode("500").data("destPath: "+destPath).message("重命名失败或没有操作权限");
     }
 
     @Override
