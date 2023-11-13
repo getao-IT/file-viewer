@@ -129,7 +129,7 @@ public class FileController {
      * @param response 响应
      * @return
      */
-    @Log("重命名")
+    @Log("下载文件")
     @GetMapping ("/download")
     public CommonResult<String> download(String filePath, HttpServletResponse response) {
         boolean result = fileService.download(filePath, response);
@@ -139,8 +139,8 @@ public class FileController {
     @Log(value = "图片格式转换")
     @ApiOperation("图片格式转换")
     @PostMapping("/formatConverter")
-    public CommonResult<String> formatConverter(String progressId, String filePath, String format) {
-        Integer code = this.fileProcessingService.formatConverter(progressId, filePath, format);
+    public CommonResult<String> formatConverter(String progressId, String filePath, String outputPath, String format) {
+        Integer code = this.fileProcessingService.formatConverter(progressId, filePath, outputPath, format);
         return new CommonResult<String>().success().data(String.valueOf(code)).message("格式转换后台进行中");
     }
 
@@ -148,8 +148,8 @@ public class FileController {
     @Log(value = "图片灰度转换")
     @ApiOperation("图片灰度转换")
     @PostMapping("/greyConverter")
-    public CommonResult<String> greyConverter(String src) {
-        this.fileProcessingService.greyConverter(src, OpenCV.NormalizeType.MINMAX);
+    public CommonResult<String> greyConverter(String src, String outPutPath) {
+        this.fileProcessingService.greyConverter(src, outPutPath, OpenCV.NormalizeType.MINMAX);
         return new CommonResult<String>().success().message("图片灰度转换成功");
     }
 }

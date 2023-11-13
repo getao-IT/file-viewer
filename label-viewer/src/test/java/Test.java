@@ -7,6 +7,7 @@ import cn.aircas.airproject.service.LabelProjectService;
 import cn.aircas.airproject.service.impl.FileProcessingServiceImpl;
 import cn.aircas.airproject.utils.ImageUtil;
 import cn.aircas.airproject.utils.OpenCV;
+import org.apache.commons.io.FilenameUtils;
 import org.gdal.gdal.ProgressCallback;
 import org.gdal.gdal.gdal;
 import org.gdal.ogr.ogr;
@@ -15,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import java.io.File;
 import java.io.IOException;
 
 @RunWith(SpringRunner.class)
@@ -44,7 +46,7 @@ public class Test {
         String filePath = "C:\\Users\\Administrator\\Desktop\\temp\\无标题.jpg";
         /*server.formatConverter(filePath, "PNG");
         System.out.println("格式转换成功！");*/
-        server.greyConverter(filePath, OpenCV.NormalizeType.MINMAX);
+        server.greyConverter(filePath, "", OpenCV.NormalizeType.MINMAX);
         System.out.println("灰度转换成功！");
     }
 
@@ -60,7 +62,10 @@ public class Test {
 
     @org.junit.Test
     public void testGdalProgress() {
-        System.out.println();
+        String path = "C:\\Users\\Administrator\\Desktop\\temp\\123_sjsk_12.jpg";
+        String baseName = FilenameUtils.getBaseName(new File(path).getName());
+        String newFileName = baseName.replace(baseName.substring(baseName.lastIndexOf("_")), "_") + "25" + ".png";
+        System.out.println(newFileName);
     }
 
 }

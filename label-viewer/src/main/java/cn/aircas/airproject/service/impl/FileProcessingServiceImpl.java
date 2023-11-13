@@ -28,17 +28,16 @@ public class FileProcessingServiceImpl implements FileProcessingService {
 
 
     @Override
-    @Async
-    public Integer formatConverter(String progressId, String filePath, String format) {
+    public Integer formatConverter(String progressId, String filePath, String outputPath, String format) {
         int code = 0;
         //Image srcimage = this.imageMapper.selectById(fileId);
         Image srcimage = this.imageTransferService.parseFileInfo(FileUtils.getStringPath(this.rootPath, filePath));
         String input = FileUtils.getStringPath(this.rootPath,srcimage.getPath());
         /*File outputParentPath = srcimage.isPublic() ? FileUtils.getFile(this.rootPath, "file-data","image", System.currentTimeMillis()) :
                 FileUtils.getFile(this.rootPath, "user", srcimage.getUserId(), "file-data", "image",System.currentTimeMillis());*/
+        //outputPath = input.replace(FilenameUtils.getExtension(outputPath), format);
 
-        String outputPath = input.replace(FilenameUtils.getExtension(input), format);
-        File outputParentPath = FileUtils.getFile(new File(input).getParentFile());
+        File outputParentPath = FileUtils.getFile(outputPath);
         if (!outputParentPath.exists()){
             outputParentPath.mkdirs();
         }
@@ -75,10 +74,14 @@ public class FileProcessingServiceImpl implements FileProcessingService {
      * @return
      */
     @Override
-    public void greyConverter(String src, OpenCV.NormalizeType type) {
+    public void greyConverter(String src, String outPutPath, OpenCV.NormalizeType type) {
         //OpenCV.normalize(src, type);
         File file = new File(FileUtils.getStringPath(this.rootPath, src));
-        ImageUtil.normalization(file);
+        File destFile = new File(FileUtils.getStringPath(this.rootPath, outPutPath, file.getName()));
+        if (destFile.exists()) {
+            destFile = cn.aircas.airproject.utils.FileUtils.autoMakeIfFileRepeat(destFile);
+        }
+        ImageUtil.normalization(file, destFile);
     }
 
 }

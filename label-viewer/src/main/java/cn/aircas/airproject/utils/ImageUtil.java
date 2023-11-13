@@ -1,6 +1,6 @@
 package cn.aircas.airproject.utils;
 
-import cn.aircas.airproject.entity.domain.ProgressCont;
+import cn.aircas.airproject.entity.domain.ProgressContr;
 import cn.aircas.utils.file.FileUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
@@ -9,38 +9,41 @@ import org.gdal.gdal.Driver;
 import org.gdal.gdal.ProgressCallback;
 import org.gdal.gdal.gdal;
 import org.gdal.gdalconst.gdalconstConstants;
-
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.math.BigDecimal;
 import java.text.DecimalFormat;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 
 
+
+/**
+ * 影像处理工具类
+ */
 @Slf4j
 public class ImageUtil {
 
 
-    public static final Map<String, ProgressCont> progressMaps = new ConcurrentHashMap<>();
+    /**
+     * key: 任务ID，即浏览器ID
+     * value: 该任务下的所有任务进度信息集合
+     */
+    public static final Map<String, ProgressContr> progressMaps = new ConcurrentHashMap<>();
+    public static final Map<String, List<ProgressContr>> progresss = new ConcurrentHashMap<>();
 
 
     /**
      * 灰度转换
      * @param images
      */
-    public static void normalization(File images) {
+    public static void normalization(File images, File destImages) {
         BufferedImage image = null;
         File file = null;
         try {
-            String absolutePath = images.getAbsolutePath();
+            String absolutePath = destImages.getAbsolutePath();
             file = new File(absolutePath);
             image = ImageIO.read(file);
 
@@ -95,11 +98,14 @@ public class ImageUtil {
             }
 
             String path = FileUtils.getStringPath(outputPath, new Object[]{baseName}) + "." + extension;
+            if (new File(path).exists()) {
+                path = cn.aircas.airproject.utils.FileUtils.autoMakeIfFileRepeat(new File(path)).getAbsolutePath();
+            }
             Dataset dataset = hDriver.CreateCopy(path, ds,0,null, new ProgressCallback(){
                 @Override
                 public int run(double dfComplete, String pszMessage) {
-                    ProgressCont progress = ProgressCont.builder().progressId(progressId).filePath(inputPath)
-                            .progressValue(new DecimalFormat("##.##").format(dfComplete * 100)).build();
+                    ProgressContr progress = ProgressContr.builder().taskId(progressId).filePath(inputPath)
+                            .progress(new DecimalFormat("##.##").format(dfComplete * 100)).build();
                     progressMaps.put(progressId, progress);
                     System.out.println("进度：" + new DecimalFormat("##.##").format(dfComplete*100));
                     return super.run(dfComplete, pszMessage);
@@ -114,6 +120,7 @@ public class ImageUtil {
             return path;
         }
     }
+
 
     public static void main(String[] args) {
         System.out.println(ImageUtil.progressMaps.get("111"));

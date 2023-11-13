@@ -140,6 +140,8 @@ public class LabelProjectServiceImpl implements LabelProjectService {
                 else {
                     fileAndFolder.setIsFile(false);
                     fileAndFolder.setExtension("文件夹");
+                    fileAndFolder.setSize("0B");
+
                 }
                 fileAndFolderList.add(fileAndFolder);
             }
