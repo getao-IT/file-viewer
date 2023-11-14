@@ -1,10 +1,14 @@
 import cn.aircas.airproject.FileProcessApplication;
 import cn.aircas.airproject.controller.LabelProjectController;
+import cn.aircas.airproject.entity.domain.ProgressContr;
 import cn.aircas.airproject.entity.domain.SaveLabelRequest;
+import cn.aircas.airproject.entity.dto.ProgressContrDto;
 import cn.aircas.airproject.entity.emun.LabelPointType;
 import cn.aircas.airproject.service.FileProcessingService;
 import cn.aircas.airproject.service.LabelProjectService;
+import cn.aircas.airproject.service.ProgressService;
 import cn.aircas.airproject.service.impl.FileProcessingServiceImpl;
+import cn.aircas.airproject.service.impl.ProgressServiceImpl;
 import cn.aircas.airproject.utils.ImageUtil;
 import cn.aircas.airproject.utils.OpenCV;
 import org.apache.commons.io.FilenameUtils;
@@ -18,6 +22,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = FileProcessApplication.class)
@@ -54,10 +59,20 @@ public class Test {
     @org.junit.Test
     public void testGdal() {
         String inputPath = "C:\\Users\\Administrator\\Desktop\\temp\\RD0100_DataCloud_Guangzhou_jiangmen_heshan_2023H1_4IM.tiled.deflate.tif";
+        //String inputPath = "C:\\Users\\Administrator\\Desktop\\temp\\无标题.png";
         String outputPath = "C:\\Users\\Administrator\\Desktop\\temp";
         String format = "PNG";
         String s = ImageUtil.formatConvertor("111",inputPath, outputPath, format);
         System.out.println(s);
+    }
+
+    @org.junit.Test
+    public void testGetProgress() {
+        ProgressService service = new ProgressServiceImpl();
+        ProgressContrDto progressContrDto = new ProgressContrDto();
+        progressContrDto.setTaskId("111");
+        List<ProgressContr> allTaskById = service.getAllTaskById(progressContrDto);
+        System.out.println("获取进度成功："+allTaskById);
     }
 
     @org.junit.Test

@@ -1,12 +1,18 @@
 package cn.aircas.airproject.service.impl;
 
+import cn.aircas.airproject.entity.domain.Image;
 import cn.aircas.airproject.entity.domain.ProgressContr;
 import cn.aircas.airproject.entity.dto.ProgressContrDto;
+import cn.aircas.airproject.entity.emun.TaskType;
 import cn.aircas.airproject.service.ProgressService;
 import cn.aircas.airproject.utils.ImageUtil;
 import com.alibaba.fastjson.JSONObject;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
+
+import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -49,19 +55,57 @@ public class ProgressServiceImpl implements ProgressService {
 
 
     @Override
-    public ProgressContr createTaskById(ProgressContrDto pcd) {
-        ProgressContr progressContr = new ProgressContr();
-        BeanUtils.copyProperties(pcd, progressContr);
-        ImageUtil.progresss.get(pcd.getTaskId()).add(progressContr);
-        return progressContr;
+    public ProgressContr createTaskById(ProgressContr pcd) {
+        if (ImageUtil.progresss.get(pcd.getTaskId()) != null) {
+            ImageUtil.progresss.get(pcd.getTaskId()).add(pcd);
+        } else {
+            List<ProgressContr> progresss = new ArrayList<>();
+            progresss.add(pcd);
+            ImageUtil.progresss.put(pcd.getTaskId(), progresss);
+        }
+        return pcd;
     }
 
 
     @Override
-    public int deleteProgress(String taskId, String filePath) {
+    public int updateProgress(ProgressContrDto pc) {
+        if (StringUtils.isBlank(pc.getTaskId()) || StringUtils.isBlank(pc.getFilePath()) || pc.getStartTime() == null) {
+            return 2;
+        }
+        List<ProgressContr> progressContrs = ImageUtil.progresss.get(pc.getTaskId());
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        for (ProgressContr progressContr : progressContrs) {
+            if (progressContr.getFilePath().equalsIgnoreCase(pc.getFilePath()) && format.format(progressContr.getStartTime()).equals(format.format(pc.getStartTime()))) {
+                //BeanUtils.copyProperties(pc, progressContr);
+                if (pc.getStatus().getCode() == 1) {
+                    progressContr.setConsumTime(pc.getConsumTime());
+                    progressContr.setProgress(pc.getProgress());
+                }
+                if (pc.getStatus().getCode() == 2) {
+                    progressContr.setStatus(pc.getStatus());
+                    progressContr.setConsumTime(pc.getConsumTime());
+                    progressContr.setProgress(pc.getProgress());
+                    progressContr.setEndTime(pc.getEndTime());
+                }
+                if (pc.getStatus().getCode() == 3) {
+                    progressContr.setStatus(pc.getStatus());
+                    progressContr.setEndTime(pc.getEndTime());
+                }
+                return 0;
+            }
+        }
+        return 1;
+    }
+
+
+    @Override
+    public int deleteProgress(String taskId, String filePath, Timestamp startTime) {
+        if (StringUtils.isBlank(taskId) || StringUtils.isBlank(filePath) || startTime == null) {
+            return 2;
+        }
         List<ProgressContr> progressContrs = ImageUtil.progresss.get(taskId);
         for (ProgressContr progressContr : progressContrs) {
-            if (progressContr.getFilePath().equalsIgnoreCase(filePath)) {
+            if (progressContr.getFilePath().equalsIgnoreCase(filePath) && progressContr.getStartTime().equals(startTime)) {
                 progressContrs.remove(progressContr);
                 return 0;
             }

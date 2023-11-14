@@ -2,7 +2,10 @@ package cn.aircas.airproject.service;
 
 import cn.aircas.airproject.entity.domain.ProgressContr;
 import cn.aircas.airproject.entity.dto.ProgressContrDto;
+import cn.aircas.airproject.entity.emun.TaskType;
 import com.alibaba.fastjson.JSONObject;
+
+import java.sql.Timestamp;
 import java.util.List;
 
 
@@ -14,9 +17,11 @@ public interface ProgressService {
 
     List<ProgressContr> getAllTaskById(ProgressContrDto pcd);
 
-    ProgressContr createTaskById(ProgressContrDto pcd);
+    ProgressContr createTaskById(ProgressContr pcd);
 
-    int deleteProgress(String taskId, String filePath);
+    int updateProgress(ProgressContrDto pc);
+
+    int deleteProgress(String taskId, String filePath, Timestamp startTime);
 
     int batchDeleteProgress(ProgressContrDto pcd);
 

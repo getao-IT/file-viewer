@@ -207,7 +207,7 @@ public class FileServiceImpl implements FileService {
             return new CommonResult<String>().setCode("500").data("destPath: "+destPath).message("文件名称已存在");
         }
         if (srcFile.renameTo(destFile)) {
-            return new CommonResult<String>().setCode("200").data("destPath: "+destPath).message("重命名成功");
+            return new CommonResult<String>().success().data("destPath: "+destPath).message("重命名成功");
         }
         return new CommonResult<String>().setCode("500").data("destPath: "+destPath).message("重命名失败或没有操作权限");
     }

@@ -2,12 +2,15 @@ package cn.aircas.airproject.entity.domain;
 
 import cn.aircas.airproject.entity.emun.TaskStatus;
 import cn.aircas.airproject.entity.emun.TaskType;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import java.sql.Timestamp;
+import org.springframework.format.annotation.DateTimeFormat;
 
+import java.sql.Timestamp;
+import java.util.Date;
 
 
 /**
@@ -31,9 +34,14 @@ public class ProgressContr {
 
     private TaskStatus status;
 
-    private Timestamp startTime;
 
-    private Timestamp endTime;
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private Date startTime;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private Date endTime;
 
     private long consumTime;
 }

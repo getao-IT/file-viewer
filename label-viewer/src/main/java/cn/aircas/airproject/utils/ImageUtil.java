@@ -1,6 +1,11 @@
 package cn.aircas.airproject.utils;
 
 import cn.aircas.airproject.entity.domain.ProgressContr;
+import cn.aircas.airproject.entity.dto.ProgressContrDto;
+import cn.aircas.airproject.entity.emun.TaskStatus;
+import cn.aircas.airproject.entity.emun.TaskType;
+import cn.aircas.airproject.service.ProgressService;
+import cn.aircas.airproject.service.impl.ProgressServiceImpl;
 import cn.aircas.utils.file.FileUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
@@ -9,11 +14,14 @@ import org.gdal.gdal.Driver;
 import org.gdal.gdal.ProgressCallback;
 import org.gdal.gdal.gdal;
 import org.gdal.gdalconst.gdalconstConstants;
+import org.springframework.beans.factory.annotation.Autowired;
+
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.text.DecimalFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -25,7 +33,6 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Slf4j
 public class ImageUtil {
-
 
     /**
      * key: 任务ID，即浏览器ID
@@ -101,13 +108,28 @@ public class ImageUtil {
             if (new File(path).exists()) {
                 path = cn.aircas.airproject.utils.FileUtils.autoMakeIfFileRepeat(new File(path)).getAbsolutePath();
             }
-            Dataset dataset = hDriver.CreateCopy(path, ds,0,null, new ProgressCallback(){
+
+            final long[] callBackTime = {System.currentTimeMillis()};
+            long taskStartTime = callBackTime[0];
+            ProgressContr progress = ProgressContr.builder().taskId(progressId).filePath(inputPath).consumTime(0)
+                    .fileName(new File(inputPath).getName()).taskType(TaskType.CONVERTER).status(TaskStatus.WORKING)
+                    .startTime(new Date()).progress("0%").build();
+            ProgressService service = new ProgressServiceImpl();
+            ProgressContr taskById = service.createTaskById(progress);
+            log.info("创建传输任务成功：taskId {}， 任务类型 {}， [ {} ]", progressId, TaskType.CONVERTER, taskById);
+
+            Dataset dataset = hDriver.CreateCopy(path, ds,1,null, new ProgressCallback(){
                 @Override
                 public int run(double dfComplete, String pszMessage) {
-                    ProgressContr progress = ProgressContr.builder().taskId(progressId).filePath(inputPath)
-                            .progress(new DecimalFormat("##.##").format(dfComplete * 100)).build();
-                    progressMaps.put(progressId, progress);
-                    System.out.println("进度：" + new DecimalFormat("##.##").format(dfComplete*100));
+                    long callBack = System.currentTimeMillis() - callBackTime[0];
+                    long consumTime = System.currentTimeMillis() - taskStartTime;
+                    if (callBack >= 1000) {
+                        ProgressContrDto pc = ProgressContrDto.builder().consumTime(consumTime).status(TaskStatus.WORKING)
+                                .progress(new DecimalFormat("##.##").format(dfComplete * 100) + "%").build();
+                        int i = service.updateProgress(pc);
+                        callBackTime[0] = System.currentTimeMillis();
+                        log.info("更新任务进度成功：taskId {} - 任务类型 {}：进度 {}，耗时 {}", progressId, TaskType.CONVERTER, pc.getProgress(), pc.getConsumTime());
+                    }
                     return super.run(dfComplete, pszMessage);
                 }
             });
