@@ -34,7 +34,6 @@ public class ProgressContr {
 
     private TaskStatus status;
 
-
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private Date startTime;
@@ -44,4 +43,6 @@ public class ProgressContr {
     private Date endTime;
 
     private long consumTime;
+
+    private String describe;
 }

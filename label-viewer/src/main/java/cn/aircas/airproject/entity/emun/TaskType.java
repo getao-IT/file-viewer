@@ -5,7 +5,7 @@ import lombok.Data;
 
 public enum TaskType {
 
-    OVERVIEWS(1),SLICE(2),CONVERTER(3),GREY(4);
+    OVERVIEWS(1),SLICE(2),CONVERTER(3),GRAY(4);
 
     private int code;
 

@@ -8,6 +8,7 @@ import cn.aircas.airproject.entity.emun.TaskType;
 import cn.aircas.airproject.service.ProgressService;
 import com.alibaba.fastjson.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 
 import java.sql.Timestamp;
@@ -59,7 +60,7 @@ public class ProgressController {
 
     @DeleteMapping("/deleteProgress")
     @Log("删除任务进度接口")
-    public CommonResult<Integer> deleteProgress(String taskId, String filePath, Timestamp startTime) {
+    public CommonResult<Integer> deleteProgress(String taskId, String filePath, @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") Date startTime) {
         int flag = progressService.deleteProgress(taskId, filePath, startTime);
         if (flag == 0) {
             return new CommonResult<Integer>().success().data(flag).message("删除任务进度成功");

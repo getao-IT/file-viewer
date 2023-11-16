@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
+import java.text.ParseException;
 import java.util.List;
 
 
@@ -139,7 +140,7 @@ public class FileController {
     @Log(value = "图片格式转换")
     @ApiOperation("图片格式转换")
     @PostMapping("/formatConverter")
-    public CommonResult<String> formatConverter(String progressId, String filePath, String outputPath, String format) {
+    public CommonResult<String> formatConverter(String progressId, String filePath, String outputPath, String format) throws ParseException {
         Integer code = this.fileProcessingService.formatConverter(progressId, filePath, outputPath, format);
         return new CommonResult<String>().success().data(String.valueOf(code)).message("格式转换后台进行中");
     }
@@ -147,9 +148,9 @@ public class FileController {
 
     @Log(value = "图片灰度转换")
     @ApiOperation("图片灰度转换")
-    @PostMapping("/greyConverter")
-    public CommonResult<String> greyConverter(String src, String outPutPath) {
-        this.fileProcessingService.greyConverter(src, outPutPath, OpenCV.NormalizeType.MINMAX);
-        return new CommonResult<String>().success().message("图片灰度转换成功");
+    @PostMapping("/grayConverter")
+    public CommonResult<String> grayConverter(String progressId, String src, String outputPath) {
+        this.fileProcessingService.grayConverter(progressId, src, outputPath);
+        return new CommonResult<String>().success().message("图片灰度转换后台进行中");
     }
 }

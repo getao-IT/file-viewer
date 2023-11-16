@@ -1,12 +1,20 @@
 package cn.aircas.airproject.service.impl;
 
+import cn.aircas.airproject.callback.GrayConverCallback;
+import cn.aircas.airproject.callback.impl.GrayConverCallbackImpl;
 import cn.aircas.airproject.entity.common.CommonResult;
 import cn.aircas.airproject.entity.common.PageResult;
 import cn.aircas.airproject.entity.domain.FileSearchParam;
+import cn.aircas.airproject.entity.domain.ProgressContr;
 import cn.aircas.airproject.entity.domain.Slice;
+import cn.aircas.airproject.entity.dto.ProgressContrDto;
 import cn.aircas.airproject.entity.emun.FileType;
 import cn.aircas.airproject.entity.emun.SourceFileType;
+import cn.aircas.airproject.entity.emun.TaskStatus;
+import cn.aircas.airproject.entity.emun.TaskType;
 import cn.aircas.airproject.service.FileService;
+import cn.aircas.airproject.service.ProgressService;
+import cn.aircas.airproject.utils.ImageUtil;
 import cn.aircas.utils.file.FileUtils;
 import cn.aircas.utils.image.ImageInfo;
 import cn.aircas.utils.image.ParseImageInfo;
@@ -15,9 +23,11 @@ import com.alibaba.fastjson.JSONObject;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang.time.DateUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import javax.servlet.ServletOutputStream;
@@ -102,6 +112,7 @@ public class FileServiceImpl implements FileService {
      * @param slice
      */
     @Override
+    @Async
     public void makeImageSlice(Slice slice) {
         service.makeImageGeoSlice(slice);
     }
@@ -113,9 +124,36 @@ public class FileServiceImpl implements FileService {
      * @return
      */
     @Override
+    @Async
     public void makeImageAllGeoSlice(Slice slice) {
-        service.makeImageAllGeoSlice(slice.getFileType(), slice.getImagePath(), slice.getWidth(), slice.getHeight(),
-                slice.getSliceInsertPath(), slice.getStep(), slice.getStorage(), slice.getRetainBlankSlice(), slice.getTakeLabelXml(),slice.getCoordinateType());
+        ProgressService pservice = new ProgressServiceImpl();
+        final long[] callBackTime = {System.currentTimeMillis()};
+        long taskStartTime = callBackTime[0];
+        String filePath = FileUtils.getStringPath(this.rootPath, slice.getImagePath());
+        ProgressContr progress = null;
+
+        try {
+            Date startTime = DateUtils.parseDate(org.apache.http.client.utils.DateUtils.formatDate(new Date(), "yyyy-MM-dd HH:mm:ss"), new String[]{"yyyy-MM-dd HH:mm:ss"});
+            progress = ProgressContr.builder().taskId(slice.getProgressId()).filePath(filePath)
+                    .consumTime(0).fileName(new File(filePath).getName()).taskType(TaskType.SLICE).status(TaskStatus.WORKING)
+                    .startTime(startTime).progress("0%").describe("裁切任务进行中...").build();
+            ProgressContr taskById = pservice.createTaskById(progress);
+            log.info("创建裁切任务成功：taskId {}， 任务类型 {}， [ {} ]", slice.getProgressId(), TaskType.SLICE, taskById);
+            service.makeImageAllGeoSlice(slice.getFileType(), slice.getImagePath(), slice.getWidth(), slice.getHeight(),
+                    slice.getSliceInsertPath(), slice.getStep(), slice.getStorage(), slice.getRetainBlankSlice(),
+                    slice.getTakeLabelXml(),slice.getCoordinateType(),new GrayConverCallbackImpl(progress));
+            ProgressContrDto success = ProgressContrDto.builder().taskId(slice.getProgressId()).filePath(filePath)
+                    .startTime(progress.getStartTime()).endTime(new Date()).describe("裁切成功").status(TaskStatus.FINISH)
+                    .progress("100%").consumTime(System.currentTimeMillis() - taskStartTime).build();
+            int i = pservice.updateProgress(success);
+            log.info("裁剪任务执行成功， 更新状态：{}, [ {} ]",i, success);
+        }catch (Exception e){
+            ProgressContrDto fail = ProgressContrDto.builder().taskId(slice.getProgressId()).filePath(filePath)
+                    .startTime(progress.getStartTime()).endTime(new Date()).describe("裁剪失败").status(TaskStatus.FAIL)
+                    .consumTime(System.currentTimeMillis() - taskStartTime).build();
+            int i = pservice.updateProgress(fail);
+            log.error("裁剪任务执行异常：{}，更新状态：{}, [ {} ]", e.getMessage(), i, fail);
+        }
     }
 
 

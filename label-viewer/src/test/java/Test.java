@@ -1,20 +1,17 @@
 import cn.aircas.airproject.FileProcessApplication;
-import cn.aircas.airproject.controller.LabelProjectController;
+import cn.aircas.airproject.callback.impl.GrayConverCallbackImpl;
 import cn.aircas.airproject.entity.domain.ProgressContr;
 import cn.aircas.airproject.entity.domain.SaveLabelRequest;
 import cn.aircas.airproject.entity.dto.ProgressContrDto;
 import cn.aircas.airproject.entity.emun.LabelPointType;
+import cn.aircas.airproject.entity.emun.TaskStatus;
+import cn.aircas.airproject.entity.emun.TaskType;
 import cn.aircas.airproject.service.FileProcessingService;
 import cn.aircas.airproject.service.LabelProjectService;
 import cn.aircas.airproject.service.ProgressService;
-import cn.aircas.airproject.service.impl.FileProcessingServiceImpl;
 import cn.aircas.airproject.service.impl.ProgressServiceImpl;
 import cn.aircas.airproject.utils.ImageUtil;
 import cn.aircas.airproject.utils.OpenCV;
-import org.apache.commons.io.FilenameUtils;
-import org.gdal.gdal.ProgressCallback;
-import org.gdal.gdal.gdal;
-import org.gdal.ogr.ogr;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -22,6 +19,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Date;
 import java.util.List;
 
 @RunWith(SpringRunner.class)
@@ -51,7 +49,7 @@ public class Test {
         String filePath = "C:\\Users\\Administrator\\Desktop\\temp\\无标题.jpg";
         /*server.formatConverter(filePath, "PNG");
         System.out.println("格式转换成功！");*/
-        server.greyConverter(filePath, "", OpenCV.NormalizeType.MINMAX);
+        server.grayConverter("111", filePath, "");
         System.out.println("灰度转换成功！");
     }
 
@@ -62,7 +60,7 @@ public class Test {
         //String inputPath = "C:\\Users\\Administrator\\Desktop\\temp\\无标题.png";
         String outputPath = "C:\\Users\\Administrator\\Desktop\\temp";
         String format = "PNG";
-        String s = ImageUtil.formatConvertor("111",inputPath, outputPath, format);
+        String s = ImageUtil.formatConvertor(inputPath, outputPath, format, null);
         System.out.println(s);
     }
 
@@ -76,11 +74,26 @@ public class Test {
     }
 
     @org.junit.Test
-    public void testGdalProgress() {
-        String path = "C:\\Users\\Administrator\\Desktop\\temp\\123_sjsk_12.jpg";
-        String baseName = FilenameUtils.getBaseName(new File(path).getName());
-        String newFileName = baseName.replace(baseName.substring(baseName.lastIndexOf("_")), "_") + "25" + ".png";
-        System.out.println(newFileName);
+    public void testGdalGray() {
+        String src = "C:\\Users\\Administrator\\Desktop\\temp\\456_copy.png";
+        String dst = "C:\\Users\\Administrator\\Desktop\\temp\\456_copy.png";
+        OpenCV.normalize(src, dst, OpenCV.NormalizeType.MINMAX);
+    }
+
+    @org.junit.Test
+    public void testImageIoGray() {
+        ProgressService service = new ProgressServiceImpl();
+        String src = "C:\\Users\\Administrator\\Desktop\\temp\\P_GZ_test4_2010_1107_Level_18.tif";
+        File file = new File(src);
+        String dst = "C:\\Users\\Administrator\\Desktop\\temp\\P_GZ_1.tif";
+        File dest = new File(dst);
+        ProgressContr progress = ProgressContr.builder().taskId("111222").filePath(src).consumTime(0)
+                .fileName(file.getName()).taskType(TaskType.GRAY).status(TaskStatus.WORKING)
+                .startTime(new Date()).progress("0%").build();
+        service.createTaskById(progress);
+        System.out.print("创建传输任务成功：" + progress);
+        ImageUtil.grayConver(file, new GrayConverCallbackImpl(progress));
     }
 
 }
+

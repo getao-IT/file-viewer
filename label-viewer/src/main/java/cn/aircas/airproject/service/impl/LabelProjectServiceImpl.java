@@ -4,19 +4,19 @@ import cn.aircas.airproject.entity.LabelFile.LabelObject;
 import cn.aircas.airproject.entity.LabelFile.VifLabelOjectInfo;
 import cn.aircas.airproject.entity.LabelFile.XMLLabelObjectInfo;
 import cn.aircas.airproject.entity.domain.*;
-import cn.aircas.airproject.entity.emun.CoordinateConvertType;
-import cn.aircas.airproject.entity.emun.CoordinateSystemType;
-import cn.aircas.airproject.entity.emun.LabelPointType;
+import cn.aircas.airproject.entity.dto.ProgressContrDto;
+import cn.aircas.airproject.entity.emun.*;
 import cn.aircas.airproject.service.LabelProjectService;
-import cn.aircas.airproject.utils.FileUtils;
-import cn.aircas.airproject.utils.LabelPointTypeConvertor;
-import cn.aircas.airproject.utils.ParseImageInfo;
-import cn.aircas.airproject.utils.XMLUtils;
+import cn.aircas.airproject.service.ProgressService;
+import cn.aircas.airproject.utils.*;
 import cn.aircas.utils.image.geo.GeoUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang.time.DateUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -60,14 +60,38 @@ public class LabelProjectServiceImpl implements LabelProjectService {
      * @param imagePath
      */
     @Override
-    public void buildOverviews(String imagePath) {
+    @Async
+    public void buildOverviews(String progressId, String imagePath) {
         File imageFile = FileUtils.getFile(this.rootDir,imagePath);
         if (!imageFile.exists()){
             log.error("文件：{} 不存在",imagePath);
             return ;
         }
 
-        cn.aircas.utils.image.ParseImageInfo.buildOverviews(imageFile.getAbsolutePath());
+        ProgressService service = new ProgressServiceImpl();
+        final long[] callBackTime = {System.currentTimeMillis()};
+        long taskStartTime = callBackTime[0];
+        ProgressContr progress = null;
+
+        try {
+            Date startTime = DateUtils.parseDate(org.apache.http.client.utils.DateUtils.formatDate(new Date(), "yyyy-MM-dd HH:mm:ss"), new String[]{"yyyy-MM-dd HH:mm:ss"});
+            progress = ProgressContr.builder().taskId(progressId).filePath(imageFile.getAbsolutePath()).consumTime(0)
+                    .fileName(imageFile.getName()).taskType(TaskType.OVERVIEWS).status(TaskStatus.WORKING)
+                    .startTime(startTime).progress("0%").describe("金字塔构建中...").build();
+            ProgressContr taskById = service.createTaskById(progress);
+            log.info("创建传输任务成功：taskId {}， 任务类型 {}， [ {} ]", progressId, TaskType.OVERVIEWS, taskById);
+            ImageUtil.buildOverviews(imageFile.getAbsolutePath(), progress);
+            ProgressContrDto success = ProgressContrDto.builder().taskId(progressId).filePath(imageFile.getAbsolutePath()).startTime(progress.getStartTime())
+                    .endTime(new Date()).describe("金字塔构建成功").status(TaskStatus.FINISH).progress("100%").consumTime(System.currentTimeMillis() - taskStartTime).build();
+            int i = service.updateProgress(success);
+            log.info("金字塔构建成功， 更新状态：{}, [ {} ]",i, success);
+        }catch (Exception e){
+            ProgressContrDto fail = ProgressContrDto.builder().taskId(progressId).filePath(imageFile.getAbsolutePath()).startTime(progress.getStartTime())
+                    .endTime(new Date()).describe("金字塔构建失败").status(TaskStatus.FAIL).consumTime(System.currentTimeMillis() - taskStartTime).build();
+            int i = service.updateProgress(fail);
+            log.error("金字塔构建异常：{}，更新状态：{}, [ {} ]", e.getMessage(), i, fail);
+        }
+
     }
 
     @Override

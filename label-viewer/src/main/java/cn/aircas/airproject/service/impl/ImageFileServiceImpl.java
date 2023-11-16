@@ -1,5 +1,6 @@
 package cn.aircas.airproject.service.impl;
 
+import cn.aircas.airproject.callback.GrayConverCallback;
 import cn.aircas.airproject.entity.LabelFile.XMLLabelObjectInfo;
 import cn.aircas.airproject.entity.common.PageResult;
 import cn.aircas.airproject.entity.domain.FileSearchParam;
@@ -130,7 +131,8 @@ public class ImageFileServiceImpl implements FileTypeService {
      * @return
      */
     public void makeImageAllGeoSlice(SourceFileType fileType, String imagePath, int width, int height,
-                                     String sliceInsertPath, int step, Boolean storage, Boolean retainBlankSlice, Boolean takeLabelXml,String coordType) {
+                                     String sliceInsertPath, int step, Boolean storage, Boolean retainBlankSlice,
+                                     Boolean takeLabelXml, String coordType, GrayConverCallback callback) {
         List<String> slicePathList = new ArrayList<>();
 
         //Image image = this.getById(id);
@@ -141,6 +143,7 @@ public class ImageFileServiceImpl implements FileTypeService {
         if (new File(xmlPath).exists()) {
             xmlLabelObjectInfo = XMLUtils.parseXMLFromFile(XMLLabelObjectInfo.class, xmlPath);
         }
+
         //this.rootPath = "C:\\Users\\dell\\Desktop";
         //String filePath = "C:\\Users\\dell\\Desktop\\image\\3.tiff";
         File file = new File(filePath);
@@ -156,6 +159,7 @@ public class ImageFileServiceImpl implements FileTypeService {
         int nextWidth = 0;
         int nextHeight = 0;
         int count = 1;
+        int totalSlice = this.totalSliceByStep(imageWidth, imageHeight, width, height, step);
         step = (step == 0 || step < width) ? width : step;
         for (int i = 0; i < imageWidth; i+=step) {
             nextWidth = (nextWidth + width) > imageWidth ? imageWidth : (nextWidth + width);
@@ -195,13 +199,30 @@ public class ImageFileServiceImpl implements FileTypeService {
                     this.save(sliceImage);
                 }*/
                 sliceInsertPath = savePath;
-                count++;
+                callback.run(count++/(double)totalSlice);
             }
             currentWidth = nextWidth;
             currentHeight = 0;
             nextHeight = 0;
         }
         log.info("生成切片成功，路径：{}", savePath);
+    }
+
+
+    /**
+     * 获取某范围能裁切指定大小的切片总数
+     * @param imgWidth
+     * @param imgHeight
+     * @param sliceWidth
+     * @param sliceHeight
+     * @param step
+     * @return
+     */
+    public int totalSliceByStep(int imgWidth, int imgHeight, int sliceWidth, int sliceHeight, int step) {
+        sliceWidth = sliceWidth + step;
+        int row = (imgWidth % sliceWidth) == 0 ? (imgWidth / sliceWidth) : (imgWidth / sliceWidth) + 1;
+        int col = (imgHeight % sliceHeight) == 0 ? (imgHeight / sliceHeight) : (imgHeight / sliceHeight) + 1;
+        return row * col;
     }
 
 

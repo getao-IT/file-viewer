@@ -43,4 +43,7 @@ public class ProgressContrDto {
     private Date endTime;
 
     private long consumTime;
+
+    private String describe;
+
 }

@@ -6,6 +6,7 @@ import cn.aircas.airproject.entity.emun.TaskType;
 import com.alibaba.fastjson.JSONObject;
 
 import java.sql.Timestamp;
+import java.util.Date;
 import java.util.List;
 
 
@@ -21,7 +22,7 @@ public interface ProgressService {
 
     int updateProgress(ProgressContrDto pc);
 
-    int deleteProgress(String taskId, String filePath, Timestamp startTime);
+    int deleteProgress(String taskId, String filePath, Date startTime);
 
     int batchDeleteProgress(ProgressContrDto pcd);
 

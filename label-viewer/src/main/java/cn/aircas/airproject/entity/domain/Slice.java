@@ -9,6 +9,12 @@ import java.util.Map;
 
 @Data
 public class Slice {
+
+    /**
+     * 传输任务ID
+     */
+    private String progressId;
+
     /**
      * 样本路径
      */

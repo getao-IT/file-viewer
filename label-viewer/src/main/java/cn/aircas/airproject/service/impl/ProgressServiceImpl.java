@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
@@ -73,17 +74,18 @@ public class ProgressServiceImpl implements ProgressService {
             return 2;
         }
         List<ProgressContr> progressContrs = ImageUtil.progresss.get(pc.getTaskId());
+        if (progressContrs == null) {
+            throw new RuntimeException("不存在ID " + pc.getTaskId() + " 为的任务");
+        }
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         for (ProgressContr progressContr : progressContrs) {
             if (progressContr.getFilePath().equalsIgnoreCase(pc.getFilePath()) && format.format(progressContr.getStartTime()).equals(format.format(pc.getStartTime()))) {
                 //BeanUtils.copyProperties(pc, progressContr);
                 if (pc.getStatus().getCode() == 1) {
-                    progressContr.setConsumTime(pc.getConsumTime());
                     progressContr.setProgress(pc.getProgress());
                 }
                 if (pc.getStatus().getCode() == 2) {
                     progressContr.setStatus(pc.getStatus());
-                    progressContr.setConsumTime(pc.getConsumTime());
                     progressContr.setProgress(pc.getProgress());
                     progressContr.setEndTime(pc.getEndTime());
                 }
@@ -91,6 +93,10 @@ public class ProgressServiceImpl implements ProgressService {
                     progressContr.setStatus(pc.getStatus());
                     progressContr.setEndTime(pc.getEndTime());
                 }
+
+                progressContr.setConsumTime(pc.getConsumTime());
+                progressContr.setDescribe(pc.getDescribe());
+
                 return 0;
             }
         }
@@ -99,7 +105,7 @@ public class ProgressServiceImpl implements ProgressService {
 
 
     @Override
-    public int deleteProgress(String taskId, String filePath, Timestamp startTime) {
+    public int deleteProgress(String taskId, String filePath, Date startTime) {
         if (StringUtils.isBlank(taskId) || StringUtils.isBlank(filePath) || startTime == null) {
             return 2;
         }
