@@ -4,6 +4,9 @@ import cn.aircas.airproject.config.aop.annotation.Log;
 import cn.aircas.airproject.entity.common.CommonResult;
 import cn.aircas.airproject.entity.domain.*;
 import cn.aircas.airproject.entity.emun.LabelPointType;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -33,6 +36,9 @@ public class LabelProjectController {
     @PostMapping(value = "/viwXmlFile")
     public CommonResult<String> viewXmlFile(String imagePath , LabelPointType labelPointType , String xmlPath) throws Exception {
         String json = labelProjectService.viewXmlFile(imagePath, labelPointType ,xmlPath);
+        if (StringUtils.isBlank(json)) {
+            return new CommonResult<String>().success().data(json).message("该影像无标注信息");
+        }
         return new CommonResult<String>().success().data(json).message("从服务器打开xml文件成功!");
     }
 
@@ -69,29 +75,58 @@ public class LabelProjectController {
     }
 
 
-    @PostMapping(value = "/saveLabel")
+    @Log(value = "保存标注信息")
+    @PostMapping(value = "/saveAsLabel")
     public CommonResult<String> saveLabel(@RequestBody SaveLabelRequest saveLabelRequest) throws IOException {
-        labelProjectService.saveLabel(saveLabelRequest);
+        boolean result = labelProjectService.saveLabel(saveLabelRequest);
+        if (!result)
+            return new CommonResult<String>().data(JSONObject.toJSON(saveLabelRequest).toString()).fail().message("保存标注信息失败!");
         return new CommonResult<String>().data(null).success().message("保存标注信息成功!");
     }
 
 
-    @PostMapping(value = "/saveAsLabel")
-    public CommonResult<String> saveAsLabel(@RequestBody SaveLabelRequest saveLabelRequest) throws IOException {
-        labelProjectService.saveAsLabel(saveLabelRequest);
+    @Log(value = "保存标注信息")
+    @PostMapping(value = "/saveLabel")
+    public CommonResult<String> saveAsLabel(@RequestBody SaveLabelRequest saveLabelRequest) {
+        String error = labelProjectService.saveAsLabel(saveLabelRequest);
+        if (error != null) {
+            return new CommonResult<String>().data(null).fail().message(error);
+        }
         return new CommonResult<String>().data(null).success().message("保存标注信息成功!");
+    }
+
+
+    @PostMapping(value = "/importLabel")
+    @Log("导入标注信息")
+    public CommonResult<String> importLabel(String imagePath, LabelPointType labelPointType, MultipartFile file) {
+        String labelInfo = labelProjectService.importLabel(imagePath, labelPointType, file);
+        if (labelInfo == null) {
+            return new CommonResult<String>().fail().message("导入标注信息失败");
+        }
+        return new CommonResult<String>().data(labelInfo).success().message("导入标注信息成功!");
+    }
+
+
+    @PostMapping(value = "/exportLabel")
+    @Log("导出标注信息")
+    public CommonResult<String> exportLabel(@RequestBody SaveLabelRequest labelRequest) {
+        String result = labelProjectService.exportLabel(labelRequest);
+        if (result == null) {
+            return new CommonResult<String>().data(result).fail().message("导出标注信息失败");
+        }
+        return new CommonResult<String>().data(result).success().message("导出标注信息成功!");
     }
 
 
     @GetMapping(value = "/importTag")
-    public CommonResult<List<String>> importTag(String tagFilePath) throws IOException {
+    public CommonResult<List<String>> importTag(String tagFilePath) {
         List<String> tagList = labelProjectService.importTag(tagFilePath);
         return new CommonResult<List<String>>().data(tagList).success().message("导入标签文件成功!");
     }
 
 
     @GetMapping(value = "/hasOverviews")
-    public CommonResult<Boolean> hasOverviews(String imagePath) throws IOException {
+    public CommonResult<Boolean> hasOverviews(String imagePath) {
         boolean hasOverview = labelProjectService.hasOverview(imagePath);
         return new CommonResult<Boolean>().data(hasOverview).success().message("判断文件是否包含金字塔成功");
     }

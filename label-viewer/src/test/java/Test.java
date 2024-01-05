@@ -12,6 +12,9 @@ import cn.aircas.airproject.service.ProgressService;
 import cn.aircas.airproject.service.impl.ProgressServiceImpl;
 import cn.aircas.airproject.utils.ImageUtil;
 import cn.aircas.airproject.utils.OpenCV;
+import com.alibaba.fastjson.JSONObject;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.http.client.utils.DateUtils;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -19,8 +22,12 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.TimeZone;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = FileProcessApplication.class)
@@ -95,5 +102,26 @@ public class Test {
         ImageUtil.grayConver(file, new GrayConverCallbackImpl(progress));
     }
 
+    @org.junit.Test
+    public void testImageIoGray1() {
+        ProgressService service = new ProgressServiceImpl();
+        String src = "C:\\Users\\Administrator\\Desktop\\temp\\P_GZ_test4_2010_1107_Level_18.tif";
+        File file = new File(src);
+        String dst = "C:\\Users\\Administrator\\Desktop\\temp\\P_GZ_1.tif";
+        File dest = new File(dst);
+        ProgressContr progress = ProgressContr.builder().taskId("111222").filePath(src).consumTime(0)
+                .fileName(file.getName()).taskType(TaskType.GRAY).status(TaskStatus.WORKING)
+                .startTime(new Date()).progress("0%").build();
+        service.createTaskById(progress);
+        System.out.print("创建传输任务成功：" + progress);
+        ImageUtil.grayConver(file, new GrayConverCallbackImpl(progress));
+    }
+    @org.junit.Test
+    public void testDate() throws ParseException {
+//        String filePath = "C:\\Users\\Administrator\\Desktop\\temp\\456.jpg";
+//        ImageUtil.grayConver(filePath);
+        SaveLabelRequest saveLabelRequest = new SaveLabelRequest();
+        System.out.println(JSONObject.toJSON(saveLabelRequest).toString());
+    }
 }
 

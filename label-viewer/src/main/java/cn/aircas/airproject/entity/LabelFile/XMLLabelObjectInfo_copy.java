@@ -16,7 +16,7 @@ import java.util.Map;
 @Slf4j
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlRootElement(name = "annotation")
-public class XMLLabelObjectInfo implements LabelObject {
+public class XMLLabelObjectInfo_copy implements LabelObject {
 
     @JSONField(serialize = false)
     private Source source = new Source();
@@ -34,7 +34,7 @@ public class XMLLabelObjectInfo implements LabelObject {
     }
 
     @Data
-    @XmlType(name = "object",propOrder = {"id","type","coordinate","description","possibleResultList","points","cocLatLng","vertexLatLng","radius"})
+    @XmlType(name = "object",propOrder = {"id","type","coordinate","description","possibleResultList","points","coc","ver","radius"})
     @XmlAccessorType(XmlAccessType.FIELD)
     public static class XMLLabelObject {
         @JSONField(ordinal = 0)
@@ -48,15 +48,33 @@ public class XMLLabelObjectInfo implements LabelObject {
         @JSONField(ordinal = 3)
         private String description;
         @JSONField(name = "cocLatLng", ordinal = 6)
-        private String cocLatLng;
+        @XmlElement(name = "cocLatLng")
+        private Coc coc;
         @JSONField(name = "vertexLatLng", ordinal = 7)
-        private String vertexLatLng;
+        @XmlElement(name = "vertexLatLng")
+        private Ver ver;
         @JSONField(ordinal = 8)
         private double radius;
 
         @XmlElement(name = "possibleresult")
         @JSONField(name = "possibleresult",ordinal = 4)
         private List<PossibleResult> possibleResultList;
+
+        @Data
+        @Builder
+        @AllArgsConstructor
+        public static class Coc {
+            private Object lat;
+            private Object lng;
+        }
+
+        @Data
+        @Builder
+        @AllArgsConstructor
+        public static class Ver {
+            private Object lat;
+            private Object lng;
+        }
 
         @Data
         public static class PossibleResult {
@@ -114,10 +132,10 @@ public class XMLLabelObjectInfo implements LabelObject {
             // 如果是圆，则构建圆信息
             if (xmlLabelObject.getType().equalsIgnoreCase("CustomCircle")) {
                 double[][] objectPointArray = new double[2][2];
-                String[] coc = xmlLabelObject.getCocLatLng().split(",");
-                String[] ver = xmlLabelObject.getVertexLatLng().split(",");
-                objectPointArray[0] = new double[]{Double.parseDouble(coc[0]), Double.parseDouble(coc[1])};
-                objectPointArray[1] = new double[]{Double.parseDouble(ver[0]), Double.parseDouble(ver[1])};
+                XMLLabelObject.Coc coc = xmlLabelObject.getCoc();
+                XMLLabelObject.Ver ver = xmlLabelObject.getVer();
+                objectPointArray[0] = new double[]{Double.parseDouble(coc.getLat().toString()), Double.parseDouble(coc.getLng().toString())};
+                objectPointArray[1] = new double[]{Double.parseDouble(ver.getLat().toString()), Double.parseDouble(ver.getLng().toString())};
                 pointMap.put(objectIndex, objectPointArray);
             } else {
                 List<String> objectPointList = xmlLabelObject.getPoints().getPoint();
@@ -151,8 +169,8 @@ public class XMLLabelObjectInfo implements LabelObject {
             if (xmlLabelObject.getType().equalsIgnoreCase("CustomCircle")) {
                 double[] cocLngLat = labelPointMap.get(objectIndex)[0];
                 double[] verTexLngLat = labelPointMap.get(objectIndex)[1];
-                xmlLabelObject.setCocLatLng(cocLngLat[0]+","+cocLngLat[1]);
-                xmlLabelObject.setVertexLatLng(verTexLngLat[0]+","+verTexLngLat[1]);
+                xmlLabelObject.setCoc(XMLLabelObject.Coc.builder().lat(cocLngLat[0]).lng(cocLngLat[1]).build());
+                xmlLabelObject.setVer(XMLLabelObject.Ver.builder().lat(verTexLngLat[0]).lng(verTexLngLat[1]).build());
             } else {
                 List<String> pointList = xmlLabelObject.getPoints().getPoint();
                 pointList.clear();
@@ -234,7 +252,7 @@ public class XMLLabelObjectInfo implements LabelObject {
                 "        }\n" +
                 "    ]\n" +
                 "}";
-        LabelObject labelObject = JSONObject.parseObject(text, XMLLabelObjectInfo.class);
+        LabelObject labelObject = JSONObject.parseObject(text, XMLLabelObjectInfo_copy.class);
 
 
     }

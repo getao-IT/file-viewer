@@ -1,17 +1,12 @@
 package cn.aircas.airproject.service.impl;
 
-import cn.aircas.airproject.entity.domain.Image;
 import cn.aircas.airproject.entity.domain.ProgressContr;
 import cn.aircas.airproject.entity.dto.ProgressContrDto;
-import cn.aircas.airproject.entity.emun.TaskType;
 import cn.aircas.airproject.service.ProgressService;
 import cn.aircas.airproject.utils.ImageUtil;
 import com.alibaba.fastjson.JSONObject;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
-
-import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -31,6 +26,9 @@ public class ProgressServiceImpl implements ProgressService {
     public List<ProgressContr> getAllTaskById(ProgressContrDto pcd) {
         List<ProgressContr> result = new ArrayList<>();
         List<ProgressContr> progressContrs = ImageUtil.progresss.get(pcd.getTaskId());
+        if (progressContrs == null) {
+            return new ArrayList<>();
+        }
         if (pcd.getTaskType() == null && pcd.getStatus() == null) {
             return progressContrs;
         }
@@ -83,6 +81,7 @@ public class ProgressServiceImpl implements ProgressService {
                 //BeanUtils.copyProperties(pc, progressContr);
                 if (pc.getStatus().getCode() == 1) {
                     progressContr.setProgress(pc.getProgress());
+                    progressContr.setOutputPath(pc.getOutputPath());
                 }
                 if (pc.getStatus().getCode() == 2) {
                     progressContr.setStatus(pc.getStatus());
@@ -162,16 +161,22 @@ public class ProgressServiceImpl implements ProgressService {
         HashMap<String, Integer> objectObjectHashMap = new HashMap<>();
         List<ProgressContr> progressContrs = ImageUtil.progresss.get(pcd.getTaskId());
 
-        // 全部
-        result.put("ALL", progressContrs.size());
+        if (progressContrs == null) {
+            return null;
+        }
 
+        int total = 0;
         for (ProgressContr pc : progressContrs) {
+            if (pcd.getStatus() != null && pc.getStatus() != pcd.getStatus())
+                continue;
             if (result.containsKey(pc.getTaskType().name())) {
                 result.put(pc.getTaskType().name(), result.getIntValue(pc.getTaskType().name())+1);
             } else {
                 result.put(pc.getTaskType().name(), 1);
             }
+            total++;
         }
+        result.put("ALL", total);
         return result;
     }
 }

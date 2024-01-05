@@ -38,9 +38,13 @@ public interface LabelProjectService {
 
     String viewXmlFile(String imagePath , LabelPointType labelPointType , String xmlPath) throws Exception;
 
-    void saveLabel(SaveLabelRequest saveLabelRequest) throws IOException;
+    boolean saveLabel(SaveLabelRequest saveLabelRequest) throws IOException;
 
-    void saveAsLabel(SaveLabelRequest saveLabelRequest) throws IOException;
+    String saveAsLabel(SaveLabelRequest saveLabelRequest);
 
     List<String> importTag(String tagFilePath);
+
+    String importLabel(String imagePath, LabelPointType labelPointType, MultipartFile file);
+
+    String exportLabel(SaveLabelRequest labelRequest);
 }

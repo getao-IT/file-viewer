@@ -8,9 +8,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
-
-import java.sql.Timestamp;
 import java.util.Date;
+
 
 
 /**
@@ -25,6 +24,8 @@ public class ProgressContr {
     private String taskId;
 
     private String filePath;
+
+    private String outputPath;
 
     private String fileName;
 

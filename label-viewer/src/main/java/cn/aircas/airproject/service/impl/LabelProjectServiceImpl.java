@@ -6,29 +6,27 @@ import cn.aircas.airproject.entity.LabelFile.XMLLabelObjectInfo;
 import cn.aircas.airproject.entity.domain.*;
 import cn.aircas.airproject.entity.dto.ProgressContrDto;
 import cn.aircas.airproject.entity.emun.*;
+import cn.aircas.airproject.service.FileService;
 import cn.aircas.airproject.service.LabelProjectService;
 import cn.aircas.airproject.service.ProgressService;
 import cn.aircas.airproject.utils.*;
 import cn.aircas.utils.image.geo.GeoUtils;
+import com.alibaba.fastjson.JSONObject;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
-import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
-import java.io.FileFilter;
-import java.io.IOException;
-import java.io.RandomAccessFile;
+import javax.servlet.http.HttpServletResponse;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 
@@ -36,36 +34,46 @@ import java.util.stream.Collectors;
 @Service
 public class LabelProjectServiceImpl implements LabelProjectService {
 
-    @Value( value = "${sys.rootDir}")
+    @Value(value = "${sys.rootDir}")
     private String rootDir;
+
+    @Autowired
+    private HttpServletResponse response;
+
+    @Autowired
+    private FileService fileService;
+
 
     /**
      * 判断影像文件是否包含金字塔
+     *
      * @param imagePath
      * @return
      */
     @Override
     public boolean hasOverview(String imagePath) {
-        File imageFile = FileUtils.getFile(this.rootDir,imagePath);
-        if (!imageFile.exists()){
-            log.error("文件：{} 不存在",imagePath);
+        File imageFile = FileUtils.getFile(this.rootDir, imagePath);
+        if (!imageFile.exists()) {
+            log.error("文件：{} 不存在", imagePath);
             return true;
         }
 
         return cn.aircas.utils.image.ParseImageInfo.hasOverview(imageFile.getAbsolutePath());
     }
 
+
     /**
      * 对影像创建金字塔
+     *
      * @param imagePath
      */
     @Override
     @Async
     public void buildOverviews(String progressId, String imagePath) {
-        File imageFile = FileUtils.getFile(this.rootDir,imagePath);
-        if (!imageFile.exists()){
-            log.error("文件：{} 不存在",imagePath);
-            return ;
+        File imageFile = FileUtils.getFile(this.rootDir, imagePath);
+        if (!imageFile.exists()) {
+            log.error("文件：{} 不存在", imagePath);
+            return;
         }
 
         ProgressService service = new ProgressServiceImpl();
@@ -75,7 +83,7 @@ public class LabelProjectServiceImpl implements LabelProjectService {
 
         try {
             Date startTime = DateUtils.parseDate(org.apache.http.client.utils.DateUtils.formatDate(new Date(), "yyyy-MM-dd HH:mm:ss"), new String[]{"yyyy-MM-dd HH:mm:ss"});
-            progress = ProgressContr.builder().taskId(progressId).filePath(imageFile.getAbsolutePath()).consumTime(0)
+            progress = ProgressContr.builder().taskId(progressId).filePath(imageFile.getAbsolutePath()).outputPath(imagePath + ".ovr").consumTime(0)
                     .fileName(imageFile.getName()).taskType(TaskType.OVERVIEWS).status(TaskStatus.WORKING)
                     .startTime(startTime).progress("0%").describe("金字塔构建中...").build();
             ProgressContr taskById = service.createTaskById(progress);
@@ -84,8 +92,8 @@ public class LabelProjectServiceImpl implements LabelProjectService {
             ProgressContrDto success = ProgressContrDto.builder().taskId(progressId).filePath(imageFile.getAbsolutePath()).startTime(progress.getStartTime())
                     .endTime(new Date()).describe("金字塔构建成功").status(TaskStatus.FINISH).progress("100%").consumTime(System.currentTimeMillis() - taskStartTime).build();
             int i = service.updateProgress(success);
-            log.info("金字塔构建成功， 更新状态：{}, [ {} ]",i, success);
-        }catch (Exception e){
+            log.info("金字塔构建成功， 更新状态：{}, [ {} ]", i, success);
+        } catch (Exception e) {
             ProgressContrDto fail = ProgressContrDto.builder().taskId(progressId).filePath(imageFile.getAbsolutePath()).startTime(progress.getStartTime())
                     .endTime(new Date()).describe("金字塔构建失败").status(TaskStatus.FAIL).consumTime(System.currentTimeMillis() - taskStartTime).build();
             int i = service.updateProgress(fail);
@@ -95,45 +103,48 @@ public class LabelProjectServiceImpl implements LabelProjectService {
     }
 
     @Override
-    public String uploadFile(String imagePath , LabelPointType labelPointType ,MultipartFile file) throws Exception {
-        File tempFileDir = FileUtils.getFile(this.rootDir,"/temp");
+    public String uploadFile(String imagePath, LabelPointType labelPointType, MultipartFile file) throws Exception {
+        File tempFileDir = FileUtils.getFile(this.rootDir, "/temp");
         if (!tempFileDir.exists())
             tempFileDir.mkdirs();
-        File labelFile = FileUtils.getFile(this.rootDir,"/temp",file.getOriginalFilename());
+        File labelFile = FileUtils.getFile(this.rootDir, "/temp", file.getOriginalFilename());
         file.transferTo(labelFile);
 
-        String label =  viewXmlFile(imagePath,labelPointType,"/temp/"+file.getOriginalFilename());
+        String label = viewXmlFile(imagePath, labelPointType, "/temp/" + file.getOriginalFilename());
         labelFile.delete();
         return label;
     }
 
 
-
     @Override
-    public String viewXmlFile(String imagePath , LabelPointType labelPointType , String labelFilePath) throws Exception {
-        String labelPath = FileUtils.getStringPath(this.rootDir,labelFilePath);
-        String imageFilePath = FileUtils.getStringPath(this.rootDir,imagePath);
+    public String viewXmlFile(String imagePath, LabelPointType labelPointType, String labelFilePath) throws Exception {
+        String labelPath = FileUtils.getStringPath(this.rootDir, labelFilePath);
+        if (!new File(labelPath).exists()) {
+            return null;
+        }
+
+        String imageFilePath = FileUtils.getStringPath(this.rootDir, imagePath);
         Class clazz = labelPath.endsWith("xml") ? XMLLabelObjectInfo.class : VifLabelOjectInfo.class;
-        LabelObject labelObject = (LabelObject) XMLUtils.parseXMLFromFile(clazz,labelPath);
+        LabelObject labelObject = (LabelObject) XMLUtils.parseXMLFromFile(clazz, labelPath);
         String coordinate = labelObject.getCoordinate();
         CoordinateConvertType coordinateConvertType = CoordinateConvertType.NO_ACTION;
         //如果标注点类型与图像坐标系不同
-        if (!labelPointType.name().equalsIgnoreCase(coordinate)){
+        if (!labelPointType.name().equalsIgnoreCase(coordinate)) {
             //如果图像坐标为经纬度，标注坐标为像素，则将像素转为经纬度
-            if (labelPointType == LabelPointType.GEODEGREE){
+            if (labelPointType == LabelPointType.GEODEGREE) {
                 coordinateConvertType = GeoUtils.isProjection(imageFilePath) ? CoordinateConvertType.PIXEL_TO_PROJECTION : CoordinateConvertType.PIXEL_TO_LONLAT;
-            }else
+            } else
                 //如果图像坐标为像素，标注坐标为经纬度，则将经纬度转为像素（不可能出现）
                 coordinateConvertType = CoordinateConvertType.LONLAT_TO_PIXEL;
-        }else{
+        } else {
             //如果图像坐标为投影坐标，标注坐标为经纬度，则将经纬度转为投影坐标
-            if (LabelPointType.GEODEGREE ==labelPointType && GeoUtils.isProjection(imageFilePath))
+            if (LabelPointType.GEODEGREE == labelPointType && GeoUtils.isProjection(imageFilePath))
                 coordinateConvertType = CoordinateConvertType.LONLAT_TO_PROJECTION;
             //如果图像坐标为像素，标注坐标为像素，则将像素进行翻转
             if (LabelPointType.PIXEL == labelPointType)
                 coordinateConvertType = CoordinateConvertType.PIXEL_REVERSION;
         }
-        LabelPointTypeConvertor.convertLabelPointType(imageFilePath,labelObject,coordinateConvertType);
+        LabelPointTypeConvertor.convertLabelPointType(imageFilePath, labelObject, coordinateConvertType);
         return labelObject.toJSONObject().toString();
     }
 
@@ -145,23 +156,22 @@ public class LabelProjectServiceImpl implements LabelProjectService {
         File[] files = new File(path).listFiles();
         List<FileAndFolder> fileAndFolderList = new ArrayList<>();
 
-        if (files == null || files.length == 0){
-            log.error("路径：{} 不存在",path);
+        if (files == null || files.length == 0) {
+            log.error("路径：{} 不存在", path);
             return new ArrayList<>();
         }
-        for (File file : files){
-            if (file.isFile()||file.isDirectory()){
+        for (File file : files) {
+            if (file.isFile() || file.isDirectory()) {
                 FileAndFolder fileAndFolder = new FileAndFolder();
                 fileAndFolder.setName(file.getName());
                 fileAndFolder.setIsFile(file.isFile());
                 fileAndFolder.setPath(relativePath);
                 fileAndFolder.setLastModified(new Date(file.lastModified()));
-                if (file.isFile()){
+                if (file.isFile()) {
                     fileAndFolder.setIsFile(true);
-                    fileAndFolder.setExtension(file.getName().substring(file.getName().lastIndexOf(".")+1));
+                    fileAndFolder.setExtension(file.getName().substring(file.getName().lastIndexOf(".") + 1));
                     fileAndFolder.setSize(cn.aircas.utils.file.FileUtils.fileSizeToString(file.length()));
-                }
-                else {
+                } else {
                     fileAndFolder.setIsFile(false);
                     fileAndFolder.setExtension("文件夹");
                     fileAndFolder.setSize("0B");
@@ -182,8 +192,8 @@ public class LabelProjectServiceImpl implements LabelProjectService {
 //                return fileName1.getName().compareTo(fileName2.getName());
 //            }
 //        }).collect(Collectors.toList());
-        List<FileAndFolder> fileAndFolders = fileAndFolderList.stream().sorted((fileName1,fileName2)->
-            fileName1.getName().compareTo(fileName2.getName())).collect(Collectors.toList());
+        List<FileAndFolder> fileAndFolders = fileAndFolderList.stream().sorted((fileName1, fileName2) ->
+                fileName1.getName().compareTo(fileName2.getName())).collect(Collectors.toList());
         return fileAndFolders;
     }
 
@@ -193,13 +203,13 @@ public class LabelProjectServiceImpl implements LabelProjectService {
         path = FilenameUtils.normalizeNoEndSeparator(this.rootDir + File.separator + path);
         File[] files = new File(path).listFiles();
 
-        if (files == null){
-            log.error("路径：{} 不存在",path);
+        if (files == null) {
+            log.error("路径：{} 不存在", path);
             return new ArrayList<>();
         }
         List<FolderPac> folderList = new ArrayList<>();
-        for (File file : files){
-            if (file.isDirectory()){
+        for (File file : files) {
+            if (file.isDirectory()) {
                 FolderPac folderPac = new FolderPac();
                 folderPac.setName(file.getName());
                 folderPac.setLastModified(new Date(file.lastModified()));
@@ -221,8 +231,7 @@ public class LabelProjectServiceImpl implements LabelProjectService {
         File[] files = new File(path).listFiles(new FileFilter() {
             @Override
             public boolean accept(File file) {
-                if (file.isFile()&&(file.getName().endsWith("jpg") || file.getName().endsWith("tif") || file.getName().endsWith("tiff") || file.getName().endsWith("png")))
-                {
+                if (file.isFile() && (file.getName().endsWith("jpg") || file.getName().endsWith("tif") || file.getName().endsWith("tiff") || file.getName().endsWith("png"))) {
                     FilePac filePac = new FilePac();
                     filePac.setName(file.getName());
                     filePac.setPath(finalPath);
@@ -239,14 +248,14 @@ public class LabelProjectServiceImpl implements LabelProjectService {
             log.error("路径：{} 不存在", path);
             return new ArrayList<>();
         }
-        List<FilePac> fileList = filePacList.stream().sorted((e1,e2)->e1.getName().compareTo(e2.getName())).collect(Collectors.toList());
+        List<FilePac> fileList = filePacList.stream().sorted((e1, e2) -> e1.getName().compareTo(e2.getName())).collect(Collectors.toList());
         System.out.println(System.currentTimeMillis());
         return fileList;
     }
 
     @Override
     public ImageInfo getImageInfo(String path) {
-        path = FileUtils.getStringPath(rootDir,path);
+        path = FileUtils.getStringPath(rootDir, path);
         return ParseImageInfo.parseInfo(path);
     }
 
@@ -257,14 +266,13 @@ public class LabelProjectServiceImpl implements LabelProjectService {
 
 
     @Override
-    public void saveLabel(SaveLabelRequest saveLabelRequest) {
+    public boolean saveLabel(SaveLabelRequest saveLabelRequest) {
         String label = saveLabelRequest.getLabel();
         LabelPointType labelPointType = saveLabelRequest.getLabelPointType();
         String labelFileSavePath = rootDir + File.separator + saveLabelRequest.getSavePath();
-        String imagePath = FileUtils.getStringPath(this.rootDir,saveLabelRequest.getImagePath());
-
+        String imagePath = FileUtils.getStringPath(this.rootDir, saveLabelRequest.getImagePath());
         com.alibaba.fastjson.JSONObject jsonLabel = com.alibaba.fastjson.JSONObject.parseObject(label);
-        LabelObject labelObject = com.alibaba.fastjson.JSONObject.toJavaObject(jsonLabel,XMLLabelObjectInfo.class);
+        LabelObject labelObject = com.alibaba.fastjson.JSONObject.toJavaObject(jsonLabel, XMLLabelObjectInfo.class);
         String coordinate = labelObject.getCoordinate();
         ImageInfo imageInfo = ParseImageInfo.parseInfo(imagePath);
         CoordinateSystemType coordinateSystemType = imageInfo.getCoordinateSystemType();
@@ -276,7 +284,7 @@ public class LabelProjectServiceImpl implements LabelProjectService {
          * 目标坐标为经纬度：投影->经纬度
          * 目标坐标为像素：投影->像素
          */
-        if (coordinateSystemType == CoordinateSystemType.PROJCS){
+        if (coordinateSystemType == CoordinateSystemType.PROJCS) {
             if (labelPointType == LabelPointType.GEODEGREE)
                 coordinateConvertType = CoordinateConvertType.PROJECTION_TO_LONLAT;
             else
@@ -316,19 +324,196 @@ public class LabelProjectServiceImpl implements LabelProjectService {
 //                    coordinateConvertType = CoordinateConvertType.PROJECTION_TO_LONLAT;
 //            }
 //        }
-        LabelPointTypeConvertor.convertLabelPointType(imagePath,labelObject,coordinateConvertType);
-        XMLUtils.toXMLFile(labelFileSavePath,labelObject);
+        LabelPointTypeConvertor.convertLabelPointType(imagePath, labelObject, coordinateConvertType);
+        return XMLUtils.toXMLFile(labelFileSavePath, labelObject);
+    }
+
+    @Override
+    public String saveAsLabel(SaveLabelRequest saveLabelRequest) {
+        String imagePath = FileUtils.getStringPath(this.rootDir, saveLabelRequest.getImagePath());
+        String savePath = FileUtils.getStringPath(this.rootDir, saveLabelRequest.getSavePath());
+        String label = saveLabelRequest.getLabel();
+        LabelPointType labelPointType = saveLabelRequest.getLabelPointType();
+        LabelPointType targetPointType = saveLabelRequest.getTargetPointType();
+        LabelObject labelObject = JSONObject.toJavaObject(JSONObject.parseObject(label), XMLLabelObjectInfo.class);
+
+        File saveFile = new File(savePath);
+        if (!saveFile.getParentFile().exists()) {
+            saveFile.getParentFile().mkdirs();
+        }
+
+        try {
+            /*if (labelPointType.equals(LabelPointType.PIXEL)) {
+                labelObject = LabelPointTypeConvertor.convertLabelPointType(imagePath, labelObject, CoordinateConvertType.PIXEL_REVERSION);
+            }*/
+
+            if (labelPointType.equals(LabelPointType.GEODEGREE)) {
+                if (targetPointType.equals(LabelPointType.PROJECTION)) {
+                    labelObject = LabelPointTypeConvertor.convertLabelPointType(imagePath, labelObject, CoordinateConvertType.LONLAT_TO_PROJECTION);
+                }
+                if (targetPointType.equals(LabelPointType.PIXEL)) {
+                    labelObject = LabelPointTypeConvertor.convertLabelPointType(imagePath, labelObject, CoordinateConvertType.LONLAT_TO_PIXEL);
+                }
+            }
+
+            if (labelPointType.equals(LabelPointType.PROJECTION)) {
+                if (targetPointType.equals(LabelPointType.GEODEGREE)) {
+                    labelObject = LabelPointTypeConvertor.convertLabelPointType(imagePath, labelObject, CoordinateConvertType.PROJECTION_TO_LONLAT);
+                }
+                if (targetPointType.equals(LabelPointType.PIXEL)) {
+                    labelObject = LabelPointTypeConvertor.convertLabelPointType(imagePath, labelObject, CoordinateConvertType.PROJECTION_TO_PIXEL);
+                }
+            }
+            XMLUtils.toXMLFile(savePath, labelObject);
+            log.info("保存标注信息成功：坐标类型 {}，保存路径 {} ", targetPointType, savePath);
+            return null;
+        } catch (Exception e) {
+            log.error("保存标注信息失败：坐标类型 {}，保存路径 {} ", targetPointType, savePath);
+            return e.getMessage();
+        }
     }
 
 
+    /**
+     * 导出XML文件
+     *
+     * @param labelRequest
+     * @return
+     */
+    @Override
+    public String exportLabel(SaveLabelRequest labelRequest) {
+        LabelPointType labelPointType = labelRequest.getLabelPointType();
+        LabelPointType targetPointType = labelRequest.getTargetPointType();
 
+        String labelInfo = labelRequest.getLabel();
+        if (labelInfo == null) {
+            log.error("无标注信息");
+            return null;
+        }
+
+        String filePath = FileUtils.getStringPath(this.rootDir, labelRequest.getImagePath());
+        LabelObject xmlLabelObjectInfo = JSONObject.toJavaObject(JSONObject.parseObject(labelInfo), XMLLabelObjectInfo.class);
+        if (labelPointType == LabelPointType.GEODEGREE) {
+            if (targetPointType == LabelPointType.PIXEL) {
+                xmlLabelObjectInfo = LabelPointTypeConvertor.convertLabelPointType(filePath, xmlLabelObjectInfo, CoordinateConvertType.LONLAT_TO_PIXEL);
+            }
+            if (targetPointType == LabelPointType.PROJECTION) {
+                xmlLabelObjectInfo = LabelPointTypeConvertor.convertLabelPointType(filePath, xmlLabelObjectInfo, CoordinateConvertType.LONLAT_TO_PROJECTION);
+            }
+        }
+        if (labelPointType == LabelPointType.PROJECTION) {
+            if (targetPointType == LabelPointType.PIXEL) {
+                xmlLabelObjectInfo = LabelPointTypeConvertor.convertLabelPointType(filePath, xmlLabelObjectInfo, CoordinateConvertType.PROJECTION_TO_PIXEL);
+            }
+            if (targetPointType == LabelPointType.GEODEGREE) {
+                xmlLabelObjectInfo = LabelPointTypeConvertor.convertLabelPointType(filePath, xmlLabelObjectInfo, CoordinateConvertType.PROJECTION_TO_LONLAT);
+            }
+        }
+        if (labelPointType == LabelPointType.PIXEL) {
+            if (targetPointType == LabelPointType.GEODEGREE) {
+                xmlLabelObjectInfo = LabelPointTypeConvertor.convertLabelPointType(filePath, xmlLabelObjectInfo, CoordinateConvertType.PIXEL_TO_LONLAT);
+            }
+            if (targetPointType == LabelPointType.PROJECTION) {
+                xmlLabelObjectInfo = LabelPointTypeConvertor.convertLabelPointType(filePath, xmlLabelObjectInfo, CoordinateConvertType.PIXEL_TO_PROJECTION);
+            }
+        }
+        if (labelPointType == LabelPointType.PIXEL && targetPointType == LabelPointType.PIXEL) {
+            xmlLabelObjectInfo = LabelPointTypeConvertor.convertLabelPointType(filePath, xmlLabelObjectInfo, CoordinateConvertType.PIXEL_REVERSION);
+        }
+        String xmlString = XMLUtils.toXMLString(xmlLabelObjectInfo);
+
+        OutputStream os = null;
+        try {
+            File file = new File(filePath);
+            String xmlName = file.getName().replace(FilenameUtils.getExtension(file.getName()), "xml");
+            response.setCharacterEncoding("UTF-8");
+            //response.reset();
+            response.setContentType("application/octet-stream");
+            response.setHeader("content-type", "application/octet-stream");
+            response.setHeader("Content-Disposition", "attachment; filename=" + new String(xmlName.getBytes(), "UTF-8"));
+            byte[] bytes = xmlString.getBytes("UTF-8");
+            os = response.getOutputStream();
+
+            os.write(bytes);
+            os.close();
+        } catch (Exception ex) {
+            log.error("导出失败:", ex);
+            throw new RuntimeException("导出失败");
+        } finally {
+            try {
+                if (null != os) {
+                    os.close();
+                }
+            } catch (IOException ioEx) {
+                log.error("导出失败:", ioEx);
+            }
+        }
+
+        return filePath;
+    }
+
+
+    /**
+     * 导入标注
+     *
+     * @param imagePath
+     * @param labelPointType
+     * @param file
+     * @return
+     */
+    @Override
+    public String importLabel(String imagePath, LabelPointType labelPointType, MultipartFile file) {
+        if (file.isEmpty()) {
+            log.error("导入数据为空：{}", file.getOriginalFilename());
+            return null;
+        }
+        LabelObject labelInfo = null;
+        try {
+            labelInfo = XMLUtils.parseXMLFromStream(file.getInputStream(), XMLLabelObjectInfo.class);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        String coordinate = labelInfo.getCoordinate();
+        imagePath = FileUtils.getStringPath(this.rootDir, imagePath);
+        if (labelPointType == LabelPointType.GEODEGREE) {
+            if (coordinate.equalsIgnoreCase(LabelPointType.PIXEL.name())) {
+                labelInfo = LabelPointTypeConvertor.convertLabelPointType(imagePath, labelInfo, CoordinateConvertType.PIXEL_TO_LONLAT);
+            }
+            if (coordinate.equalsIgnoreCase(LabelPointType.PROJECTION.name())) {
+                labelInfo = LabelPointTypeConvertor.convertLabelPointType(imagePath, labelInfo, CoordinateConvertType.PROJECTION_TO_LONLAT);
+            }
+        }
+        if (labelPointType == LabelPointType.PROJECTION) {
+            if (coordinate.equalsIgnoreCase(LabelPointType.PIXEL.name())) {
+                labelInfo = LabelPointTypeConvertor.convertLabelPointType(imagePath, labelInfo, CoordinateConvertType.PIXEL_TO_PROJECTION);
+            }
+            if (coordinate.equalsIgnoreCase(LabelPointType.GEODEGREE.name())) {
+                labelInfo = LabelPointTypeConvertor.convertLabelPointType(imagePath, labelInfo, CoordinateConvertType.LONLAT_TO_PROJECTION);
+            }
+        }
+        if (labelPointType == LabelPointType.PIXEL) {
+                /*if (coordinate.equalsIgnoreCase(LabelPointType.PIXEL.name())) {
+                    labelInfo = LabelPointTypeConvertor.convertLabelPointType(imagePath, labelInfo, CoordinateConvertType.PIXEL_REVERSION);
+                }*/
+            if (coordinate.equalsIgnoreCase(LabelPointType.GEODEGREE.name())) {
+                labelInfo = LabelPointTypeConvertor.convertLabelPointType(imagePath, labelInfo, CoordinateConvertType.LONLAT_TO_PIXEL);
+            }
+            if (coordinate.equalsIgnoreCase(LabelPointType.PROJECTION.name())) {
+                labelInfo = LabelPointTypeConvertor.convertLabelPointType(imagePath, labelInfo, CoordinateConvertType.PROJECTION_TO_PIXEL);
+            }
+        }
+        if (labelPointType == LabelPointType.PIXEL && coordinate.equalsIgnoreCase(LabelPointType.PIXEL.name())) {
+            labelInfo = LabelPointTypeConvertor.convertLabelPointType(imagePath, labelInfo, CoordinateConvertType.PIXEL_REVERSION);
+        }
+        return labelInfo.toJSONObject().toJSONString();
+    }
 
     @Override
     public List<String> importTag(String tagFilePath) {
         List<String> tagList = new ArrayList<>();
-        try(RandomAccessFile randomAccessFile = new RandomAccessFile(FileUtils.getStringPath(rootDir,tagFilePath),"r")){
+        try (RandomAccessFile randomAccessFile = new RandomAccessFile(FileUtils.getStringPath(rootDir, tagFilePath), "r")) {
             String line;
-            while((line = randomAccessFile.readLine())!=null)
+            while ((line = randomAccessFile.readLine()) != null)
                 if (!line.equals("")) {
                     tagList.add(new String(line.getBytes("ISO8859-1"), "utf8"));
                 }

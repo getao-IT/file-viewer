@@ -32,4 +32,9 @@ public class SaveLabelRequest {
      * 目标转换的坐标类型
      */
     private LabelPointType targetPointType;
+
+    /**
+     * 标注XML路径
+     */
+    private String xmlPath;
 }

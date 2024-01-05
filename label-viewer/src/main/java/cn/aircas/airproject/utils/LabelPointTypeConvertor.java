@@ -177,7 +177,7 @@ public class LabelPointTypeConvertor {
         int ySize = dataset.getRasterYSize();
         for (double[][] pointValue : labelPointMap.values()) {
             for (double[] point : pointValue) {
-                point[1] = ySize - point[1];
+                point[0] = ySize - point[0];
             }
         }
         dataset.delete();

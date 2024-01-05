@@ -35,9 +35,12 @@ spring:
 #    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
 
 sys:
-  rootPath: C:\Users\dell\Desktop
-  rootDir: C:\Users\dell\Desktop
-  uploadRootPath: C:\Users\dell\Desktop
+#  rootPath: C:\Users\dell\Desktop
+#  rootDir: C:\Users\dell\Desktop
+#  uploadRootPath: C:\Users\dell\Desktop
+  rootPath: C:\Users\Administrator\Desktop
+  rootDir: C:\Users\Administrator\Desktop
+  uploadRootPath: C:\Users\Administrator\Desktop
   #rootPath: /home/data
   #rootDir: /home/data
   #uploadRootPath: /home/data

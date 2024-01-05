@@ -130,7 +130,7 @@ public class ImageFileServiceImpl implements FileTypeService {
      * @param sliceInsertPath
      * @return
      */
-    public void makeImageAllGeoSlice(SourceFileType fileType, String imagePath, int width, int height,
+    public void emakeImageAllGeoSlice(SourceFileType fileType, String imagePath, int width, int height,
                                      String sliceInsertPath, int step, Boolean storage, Boolean retainBlankSlice,
                                      Boolean takeLabelXml, String coordType, GrayConverCallback callback) {
         List<String> slicePathList = new ArrayList<>();
@@ -219,7 +219,7 @@ public class ImageFileServiceImpl implements FileTypeService {
      * @return
      */
     public int totalSliceByStep(int imgWidth, int imgHeight, int sliceWidth, int sliceHeight, int step) {
-        sliceWidth = sliceWidth + step;
+        sliceWidth = sliceWidth + (step - sliceWidth);
         int row = (imgWidth % sliceWidth) == 0 ? (imgWidth / sliceWidth) : (imgWidth / sliceWidth) + 1;
         int col = (imgHeight % sliceHeight) == 0 ? (imgHeight / sliceHeight) : (imgHeight / sliceHeight) + 1;
         return row * col;
@@ -371,6 +371,9 @@ public class ImageFileServiceImpl implements FileTypeService {
 
 
     public static void main(String[] args) {
+        ImageFileServiceImpl serv = new ImageFileServiceImpl();
+        int i = serv.totalSliceByStep(99365, 88782, 5000, 5000, 5000);
+        System.out.println(i);
         /*String dateTime="2020-01-13T16:00:00.000Z";
         dateTime=dateTime.replace("Z","UTC");
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS Z");

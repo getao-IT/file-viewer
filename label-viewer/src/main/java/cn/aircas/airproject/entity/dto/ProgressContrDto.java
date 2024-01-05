@@ -26,6 +26,8 @@ public class ProgressContrDto {
 
     private String filePath;
 
+    private String outputPath;
+
     private String fileName;
 
     private TaskType taskType;

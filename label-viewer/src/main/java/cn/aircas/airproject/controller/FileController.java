@@ -1,5 +1,6 @@
 package cn.aircas.airproject.controller;
 
+import cn.aircas.airproject.callback.GrayConverCallback;
 import cn.aircas.airproject.config.aop.annotation.Log;
 import cn.aircas.airproject.entity.common.CommonResult;
 import cn.aircas.airproject.entity.domain.Slice;
@@ -9,11 +10,13 @@ import cn.aircas.airproject.utils.OpenCV;
 import com.alibaba.fastjson.JSONObject;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.xpath.operations.Bool;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
 import java.text.ParseException;
+import java.util.Collections;
 import java.util.List;
 
 
@@ -125,6 +128,20 @@ public class FileController {
 
 
     /**
+     * 判断路径是否存在
+     * @param directory
+     * @return
+     */
+    @Log("判断路径是否存在")
+    @GetMapping("/dirIsExist")
+    public CommonResult<Boolean> dirIsExist(String directory) {
+        boolean isExist = fileService.pathIsExist(directory);
+        return isExist ? new CommonResult<Boolean>().success().data(isExist).message("存在该目录")
+                : new CommonResult<Boolean>().fail().data(isExist).message("不存在该目录");
+    }
+
+
+    /**
      * 下载文件
      * @param filePath 文件路径
      * @param response 响应
@@ -137,20 +154,30 @@ public class FileController {
         return new CommonResult<String>().success().message(result ? "文件下载成功" : "文件下载失败");
     }
 
+
     @Log(value = "图片格式转换")
     @ApiOperation("图片格式转换")
     @PostMapping("/formatConverter")
     public CommonResult<String> formatConverter(String progressId, String filePath, String outputPath, String format) throws ParseException {
-        Integer code = this.fileProcessingService.formatConverter(progressId, filePath, outputPath, format);
-        return new CommonResult<String>().success().data(String.valueOf(code)).message("格式转换后台进行中");
+        this.fileProcessingService.formatConverter(progressId, filePath, outputPath, format);
+        return new CommonResult<String>().success().message("格式转换后台进行中");
     }
 
 
     @Log(value = "图片灰度转换")
     @ApiOperation("图片灰度转换")
-    @PostMapping("/grayConverter")
+    @PostMapping("/rgbGrayConverter")
     public CommonResult<String> grayConverter(String progressId, String src, String outputPath) {
         this.fileProcessingService.grayConverter(progressId, src, outputPath);
         return new CommonResult<String>().success().message("图片灰度转换后台进行中");
+    }
+
+
+    @Log(value = "OpenCV图片灰度转换")
+    @ApiOperation("OpenCV图片灰度转换")
+    @PostMapping("/grayConverter")
+    public CommonResult<String> opencvGrayConverter(String progressId, String src, String outputPath) {
+        this.fileProcessingService.opencvGrayConverter(progressId, src, outputPath, OpenCV.NormalizeType.MINMAX, null);
+        return new CommonResult<String>().success().message("OpenCV图片灰度转换后台进行中");
     }
 }

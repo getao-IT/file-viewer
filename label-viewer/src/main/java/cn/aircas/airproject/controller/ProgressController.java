@@ -4,14 +4,12 @@ import cn.aircas.airproject.config.aop.annotation.Log;
 import cn.aircas.airproject.entity.common.CommonResult;
 import cn.aircas.airproject.entity.domain.ProgressContr;
 import cn.aircas.airproject.entity.dto.ProgressContrDto;
-import cn.aircas.airproject.entity.emun.TaskType;
 import cn.aircas.airproject.service.ProgressService;
+import cn.aircas.airproject.utils.DateUtils;
 import com.alibaba.fastjson.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
-
-import java.sql.Timestamp;
 import java.util.Date;
 import java.util.List;
 
@@ -61,7 +59,7 @@ public class ProgressController {
     @DeleteMapping("/deleteProgress")
     @Log("删除任务进度接口")
     public CommonResult<Integer> deleteProgress(String taskId, String filePath, @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") Date startTime) {
-        int flag = progressService.deleteProgress(taskId, filePath, startTime);
+        int flag = progressService.deleteProgress(taskId, filePath, DateUtils.getHoursBeforDate(startTime, -8));
         if (flag == 0) {
             return new CommonResult<Integer>().success().data(flag).message("删除任务进度成功");
         } else if (flag == 2) {

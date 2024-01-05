@@ -1,5 +1,6 @@
 package cn.aircas.airproject.service.impl;
 
+import cn.aircas.airproject.callback.GrayConverCallback;
 import cn.aircas.airproject.callback.impl.GrayConverCallbackImpl;
 import cn.aircas.airproject.entity.domain.Image;
 import cn.aircas.airproject.entity.domain.ProgressContr;
@@ -12,23 +13,18 @@ import cn.aircas.airproject.service.ProgressService;
 import cn.aircas.airproject.utils.ImageUtil;
 import cn.aircas.airproject.utils.OpenCV;
 import cn.aircas.utils.file.FileUtils;
-import cn.aircas.utils.image.ImageFormat;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.time.DateUtils;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
-import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.stereotype.Service;
-
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.IOException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Date;
+
+
 
 @Slf4j
 @Service
@@ -38,14 +34,20 @@ public class FileProcessingServiceImpl implements FileProcessingService {
     public String rootPath;
 
     @Autowired
-    ImageTransferService imageTransferService;
+    private ImageTransferService imageTransferService;
 
 
+    /**
+     * 图片格式转换
+     * @param progressId
+     * @param filePath
+     * @param outputPath
+     * @param format
+     * @return
+     */
     @Override
     @Async
-    public Integer formatConverter(String progressId, String filePath, String outputPath, String format) {
-        int code = 0;
-        Image srcimage = this.imageTransferService.parseFileInfo(FileUtils.getStringPath(this.rootPath, filePath));
+    public void formatConverter(String progressId, String filePath, String outputPath, String format) { Image srcimage = this.imageTransferService.parseFileInfo(FileUtils.getStringPath(this.rootPath, filePath));
         String input = FileUtils.getStringPath(this.rootPath,srcimage.getPath());
 
         File outputParentPath = FileUtils.getFile(FileUtils.getStringPath(this.rootPath, outputPath));
@@ -53,10 +55,9 @@ public class FileProcessingServiceImpl implements FileProcessingService {
             outputParentPath.mkdirs();
         }
 
-        ProgressService service = new ProgressServiceImpl();
-        final long[] callBackTime = {System.currentTimeMillis()};
-        long taskStartTime = callBackTime[0];
+        long taskStartTime = System.currentTimeMillis();
         ProgressContr progress = null;
+        ProgressService service = new ProgressServiceImpl();
 
         try {
             Date startTime = DateUtils.parseDate(org.apache.http.client.utils.DateUtils.formatDate(new Date(), "yyyy-MM-dd HH:mm:ss"), new String[]{"yyyy-MM-dd HH:mm:ss"});
@@ -76,10 +77,44 @@ public class FileProcessingServiceImpl implements FileProcessingService {
                     .endTime(new Date()).describe("格式转换失败").status(TaskStatus.FAIL).consumTime(System.currentTimeMillis() - taskStartTime).build();
             int i = service.updateProgress(fail);
             log.error("格式转换异常：{}，更新状态：{}, [ {} ]", e.getMessage(), i, fail);
-            code = 1;
         }
+    }
 
-        return code;
+
+    /**
+     * 使用OpenCV进行图像灰度转换
+     * @param src
+     * @param dst
+     * @param type
+     * @param callback
+     */
+    @Override
+    @Async
+    public void opencvGrayConverter(String progressId, String src, String dst, OpenCV.NormalizeType type, GrayConverCallback callback) {
+        long taskStartTime = System.currentTimeMillis();
+        ProgressContr progress = null;
+        ProgressService service = new ProgressServiceImpl();
+
+        try {
+            src = FileUtils.getStringPath(this.rootPath, src);
+            dst = FileUtils.getStringPath(this.rootPath, dst);
+            Date startTime = DateUtils.parseDate(org.apache.http.client.utils.DateUtils.formatDate(new Date(), "yyyy-MM-dd HH:mm:ss"), new String[]{"yyyy-MM-dd HH:mm:ss"});
+            progress = ProgressContr.builder().taskId(progressId).filePath(src).consumTime(0)
+                    .fileName(new File(src).getName()).taskType(TaskType.GRAY).status(TaskStatus.WORKING)
+                    .startTime(startTime).progress("50%").describe("灰度转换中...").build();
+            ProgressContr taskById = service.createTaskById(progress);
+            log.info("创建传输任务成功：taskId {}， 任务类型 {}， [ {} ]", progressId, TaskType.CONVERTER, taskById);
+            ImageUtil.opencvGrayConver(src, dst, type, callback);
+            ProgressContrDto success = ProgressContrDto.builder().taskId(progressId).filePath(src).startTime(progress.getStartTime())
+                    .endTime(new Date()).describe("灰度转换成功").status(TaskStatus.FINISH).progress("100%").consumTime(System.currentTimeMillis() - taskStartTime).build();
+            int i = service.updateProgress(success);
+            log.info("灰度转换成功， 更新状态：{}, [ {} ]",i, success);
+        } catch (Exception e) {
+            ProgressContrDto fail = ProgressContrDto.builder().taskId(progressId).filePath(src).startTime(progress.getStartTime())
+                    .endTime(new Date()).describe("灰度转换失败").status(TaskStatus.FAIL).consumTime(System.currentTimeMillis() - taskStartTime).build();
+            int i = service.updateProgress(fail);
+            log.error("灰度转换异常：{}，更新状态：{}, [ {} ]", e.getMessage(), i, fail);
+        }
     }
 
 
@@ -101,10 +136,9 @@ public class FileProcessingServiceImpl implements FileProcessingService {
             destFile = cn.aircas.airproject.utils.FileUtils.autoMakeIfFileRepeat(destFile);
         }
 
-        ProgressService service = new ProgressServiceImpl();
-        final long[] callBackTime = {System.currentTimeMillis()};
-        long taskStartTime = callBackTime[0];
+        long taskStartTime = System.currentTimeMillis();
         ProgressContr progress = null;
+        ProgressService service = new ProgressServiceImpl();
 
         try {
             Date startTime = DateUtils.parseDate(org.apache.http.client.utils.DateUtils.formatDate(new Date(), "yyyy-MM-dd HH:mm:ss"), new String[]{"yyyy-MM-dd HH:mm:ss"});
@@ -120,7 +154,7 @@ public class FileProcessingServiceImpl implements FileProcessingService {
             log.info("灰度文件写入中...， 更新状态：{}, [ {} ]",i, pct);
 
             ImageUtil.grayImageWrite(image, FilenameUtils.getExtension(file.getName()), destFile);
-            pct = ProgressContrDto.builder().taskId(progressId).filePath(file.getAbsolutePath()).startTime(progress.getStartTime())
+            pct = ProgressContrDto.builder().taskId(progressId).filePath(file.getAbsolutePath()).startTime(progress.getStartTime()).outputPath(destFile.getAbsolutePath().replace("/home/data", ""))
                     .endTime(new Date()).describe("文件灰度转换完成").status(TaskStatus.FINISH).progress("100%").consumTime(System.currentTimeMillis() - taskStartTime).build();
             i = service.updateProgress(pct);
             log.info("灰度文件写入成功...， 更新状态：{}, [ {} ]",i, pct);
@@ -132,4 +166,25 @@ public class FileProcessingServiceImpl implements FileProcessingService {
         }
     }
 
+
+    /**
+     * 构建传输进程信息
+     * @param taskId
+     * @param filePath
+     * @param consumTime
+     * @param fileName
+     * @param taskType
+     * @param status
+     * @param startTime
+     * @param progress
+     * @param describe
+     * @return
+     */
+    private ProgressContr builderProgressContr(String taskId, String filePath, long consumTime, String fileName,
+                                               TaskType taskType, TaskStatus status, Date startTime, String progress,
+                                               String describe) {
+        return ProgressContr.builder().taskId(taskId).filePath(filePath).consumTime(consumTime)
+                .fileName(fileName).taskType(taskType).status(status)
+                .startTime(startTime).progress(progress).describe(describe).build();
+    }
 }

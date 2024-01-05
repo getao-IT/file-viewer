@@ -1,6 +1,5 @@
 package cn.aircas.airproject.service.impl;
 
-import cn.aircas.airproject.callback.GrayConverCallback;
 import cn.aircas.airproject.callback.impl.GrayConverCallbackImpl;
 import cn.aircas.airproject.entity.common.CommonResult;
 import cn.aircas.airproject.entity.common.PageResult;
@@ -9,16 +8,13 @@ import cn.aircas.airproject.entity.domain.ProgressContr;
 import cn.aircas.airproject.entity.domain.Slice;
 import cn.aircas.airproject.entity.dto.ProgressContrDto;
 import cn.aircas.airproject.entity.emun.FileType;
-import cn.aircas.airproject.entity.emun.SourceFileType;
 import cn.aircas.airproject.entity.emun.TaskStatus;
 import cn.aircas.airproject.entity.emun.TaskType;
 import cn.aircas.airproject.service.FileService;
 import cn.aircas.airproject.service.ProgressService;
-import cn.aircas.airproject.utils.ImageUtil;
 import cn.aircas.utils.file.FileUtils;
 import cn.aircas.utils.image.ImageInfo;
 import cn.aircas.utils.image.ParseImageInfo;
-import cn.aircas.utils.image.slice.SliceGenerateUtil;
 import com.alibaba.fastjson.JSONObject;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.compress.utils.Lists;
@@ -29,7 +25,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
@@ -114,7 +109,33 @@ public class FileServiceImpl implements FileService {
     @Override
     @Async
     public void makeImageSlice(Slice slice) {
-        service.makeImageGeoSlice(slice);
+        ProgressService pservice = new ProgressServiceImpl();
+        final long[] callBackTime = {System.currentTimeMillis()};
+        long taskStartTime = callBackTime[0];
+        String filePath = FileUtils.getStringPath(this.rootPath, slice.getImagePath());
+        ProgressContr progress = null;
+
+        try {
+            Date startTime = DateUtils.parseDate(org.apache.http.client.utils.DateUtils.formatDate(new Date(), "yyyy-MM-dd HH:mm:ss"), new String[]{"yyyy-MM-dd HH:mm:ss"});
+            String sliceInsertPath = slice.getSliceInsertPath() + "." + FilenameUtils.getExtension(filePath);
+            progress = ProgressContr.builder().taskId(slice.getProgressId()).filePath(filePath).outputPath(sliceInsertPath)
+                    .consumTime(0).fileName(new File(filePath).getName()).taskType(TaskType.SLICE).status(TaskStatus.WORKING)
+                    .startTime(startTime).progress("50%").describe("固定裁切进行中...").build();
+            ProgressContr taskById = pservice.createTaskById(progress);
+            log.info("创建固定裁切任务成功：taskId {}， 任务类型 {}， [ {} ]", slice.getProgressId(), TaskType.SLICE, taskById);
+            service.makeImageGeoSlice(slice);
+            ProgressContrDto success = ProgressContrDto.builder().taskId(slice.getProgressId()).filePath(filePath)
+                    .startTime(progress.getStartTime()).endTime(new Date()).describe("裁切成功").status(TaskStatus.FINISH)
+                    .progress("100%").consumTime(System.currentTimeMillis() - taskStartTime).build();
+            int i = pservice.updateProgress(success);
+            log.info("固定裁切任务执行成功， 更新状态：{}, [ {} ]",i, success);
+        }catch (Exception e){
+            ProgressContrDto fail = ProgressContrDto.builder().taskId(slice.getProgressId()).filePath(filePath)
+                    .startTime(progress.getStartTime()).endTime(new Date()).describe("裁剪失败").status(TaskStatus.FAIL)
+                    .consumTime(System.currentTimeMillis() - taskStartTime).build();
+            int i = pservice.updateProgress(fail);
+            log.error("固定裁切任务执行异常：{}，更新状态：{}, [ {} ]", e.getMessage(), i, fail);
+        }
     }
 
 
@@ -134,12 +155,12 @@ public class FileServiceImpl implements FileService {
 
         try {
             Date startTime = DateUtils.parseDate(org.apache.http.client.utils.DateUtils.formatDate(new Date(), "yyyy-MM-dd HH:mm:ss"), new String[]{"yyyy-MM-dd HH:mm:ss"});
-            progress = ProgressContr.builder().taskId(slice.getProgressId()).filePath(filePath)
+            progress = ProgressContr.builder().taskId(slice.getProgressId()).filePath(filePath).outputPath(slice.getSliceInsertPath())
                     .consumTime(0).fileName(new File(filePath).getName()).taskType(TaskType.SLICE).status(TaskStatus.WORKING)
                     .startTime(startTime).progress("0%").describe("裁切任务进行中...").build();
             ProgressContr taskById = pservice.createTaskById(progress);
             log.info("创建裁切任务成功：taskId {}， 任务类型 {}， [ {} ]", slice.getProgressId(), TaskType.SLICE, taskById);
-            service.makeImageAllGeoSlice(slice.getFileType(), slice.getImagePath(), slice.getWidth(), slice.getHeight(),
+            service.emakeImageAllGeoSlice(slice.getFileType(), slice.getImagePath(), slice.getWidth(), slice.getHeight(),
                     slice.getSliceInsertPath(), slice.getStep(), slice.getStorage(), slice.getRetainBlankSlice(),
                     slice.getTakeLabelXml(),slice.getCoordinateType(),new GrayConverCallbackImpl(progress));
             ProgressContrDto success = ProgressContrDto.builder().taskId(slice.getProgressId()).filePath(filePath)
@@ -250,6 +271,7 @@ public class FileServiceImpl implements FileService {
         return new CommonResult<String>().setCode("500").data("destPath: "+destPath).message("重命名失败或没有操作权限");
     }
 
+
     @Override
     public boolean download(String filePath, HttpServletResponse response) {
         String downloadPath = FileUtils.getStringPath(this.rootPath, filePath);
@@ -287,5 +309,19 @@ public class FileServiceImpl implements FileService {
             return false;
         }
         return true;
+    }
+
+
+    /**
+     * 判断路径是否存在
+     * @param directory
+     * @return
+     */
+    @Override
+    public boolean pathIsExist(String directory) {
+        File dir = new File(FileUtils.getStringPath(this.rootPath, directory));
+        if(dir.exists())
+            return true;
+        return false;
     }
 }

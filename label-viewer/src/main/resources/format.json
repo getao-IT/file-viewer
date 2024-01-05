@@ -1,0 +1,39 @@
+{
+  "object": [
+    {
+      "id": 399,
+      "type": "CustomCircle",
+      "coordinate": "pixel",
+      "description": "像素坐标",
+      "cocLatlng": "352.0,672.0",
+      "vertexLatlng": "464.0,928.0",
+      "radius": 34.92849839314596,
+      "possibleresult": [
+        {
+          "name": "未知",
+          "probability": "1"
+        }
+      ]
+    },
+    {
+      "id": 403,
+      "type": "Rectangle",
+      "coordinate": "pixel",
+      "description": "像素坐标",
+      "possibleresult": [
+        {
+          "name": "未知",
+          "probability": "1"
+        }
+      ],
+      "points": {
+        "point": [
+          "984.0,1392.0",
+          "408.0,1392.0",
+          "408.0,2480.0",
+          "984.0,2480.0"
+        ]
+      }
+    }
+  ]
+}
