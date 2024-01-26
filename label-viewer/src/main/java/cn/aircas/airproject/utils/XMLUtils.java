@@ -3,7 +3,6 @@ package cn.aircas.airproject.utils;
 import cn.aircas.airproject.entity.LabelFile.LabelObject;
 import cn.aircas.airproject.entity.LabelFile.XMLLabelObjectInfo;
 import lombok.extern.slf4j.Slf4j;
-
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;

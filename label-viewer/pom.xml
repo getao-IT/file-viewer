@@ -168,7 +168,7 @@
             <groupId>org</groupId>
             <artifactId>opencv</artifactId>
             <version>4.0.1</version>
-        </dependency>
+        </dependency>open
         <!--<dependency>
             <groupId>org</groupId>
             <artifactId>opencvjava</artifactId>

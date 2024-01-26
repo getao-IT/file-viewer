@@ -130,16 +130,25 @@ public class LabelProjectServiceImpl implements LabelProjectService {
         CoordinateConvertType coordinateConvertType = CoordinateConvertType.NO_ACTION;
         //如果标注点类型与图像坐标系不同
         if (!labelPointType.name().equalsIgnoreCase(coordinate)) {
-            //如果图像坐标为经纬度，标注坐标为像素，则将像素转为经纬度
             if (labelPointType == LabelPointType.GEODEGREE) {
-                coordinateConvertType = GeoUtils.isProjection(imageFilePath) ? CoordinateConvertType.PIXEL_TO_PROJECTION : CoordinateConvertType.PIXEL_TO_LONLAT;
-            } else
-                //如果图像坐标为像素，标注坐标为经纬度，则将经纬度转为像素（不可能出现）
-                coordinateConvertType = CoordinateConvertType.LONLAT_TO_PIXEL;
+                if (coordinate.equalsIgnoreCase(LabelPointType.PROJECTION.name()))
+                    coordinateConvertType = CoordinateConvertType.PROJECTION_TO_LONLAT;
+                else
+                    coordinateConvertType = CoordinateConvertType.PIXEL_TO_LONLAT;
+            }
+            if (labelPointType == LabelPointType.PROJECTION) {
+                if (coordinate.equalsIgnoreCase(LabelPointType.GEODEGREE.name()))
+                    coordinateConvertType = CoordinateConvertType.LONLAT_TO_PROJECTION;
+                else
+                    coordinateConvertType = CoordinateConvertType.PIXEL_TO_PROJECTION;
+            }
+            if (labelPointType == LabelPointType.PIXEL) {
+                if (coordinate.equalsIgnoreCase(LabelPointType.PROJECTION.name()))
+                    coordinateConvertType = CoordinateConvertType.PROJECTION_TO_PIXEL;
+                else
+                    coordinateConvertType = CoordinateConvertType.LONLAT_TO_PIXEL;
+            }
         } else {
-            //如果图像坐标为投影坐标，标注坐标为经纬度，则将经纬度转为投影坐标
-            if (LabelPointType.GEODEGREE == labelPointType && GeoUtils.isProjection(imageFilePath))
-                coordinateConvertType = CoordinateConvertType.LONLAT_TO_PROJECTION;
             //如果图像坐标为像素，标注坐标为像素，则将像素进行翻转
             if (LabelPointType.PIXEL == labelPointType)
                 coordinateConvertType = CoordinateConvertType.PIXEL_REVERSION;
@@ -266,7 +275,7 @@ public class LabelProjectServiceImpl implements LabelProjectService {
 
 
     @Override
-    public boolean saveLabel(SaveLabelRequest saveLabelRequest) {
+    public String saveAsLabel(SaveLabelRequest saveLabelRequest) {
         String label = saveLabelRequest.getLabel();
         LabelPointType labelPointType = saveLabelRequest.getLabelPointType();
         String labelFileSavePath = rootDir + File.separator + saveLabelRequest.getSavePath();
@@ -325,11 +334,12 @@ public class LabelProjectServiceImpl implements LabelProjectService {
 //            }
 //        }
         LabelPointTypeConvertor.convertLabelPointType(imagePath, labelObject, coordinateConvertType);
-        return XMLUtils.toXMLFile(labelFileSavePath, labelObject);
+        XMLUtils.toXMLFile(labelFileSavePath, labelObject);
+        return "success";
     }
 
     @Override
-    public String saveAsLabel(SaveLabelRequest saveLabelRequest) {
+    public boolean saveLabel(SaveLabelRequest saveLabelRequest) {
         String imagePath = FileUtils.getStringPath(this.rootDir, saveLabelRequest.getImagePath());
         String savePath = FileUtils.getStringPath(this.rootDir, saveLabelRequest.getSavePath());
         String label = saveLabelRequest.getLabel();
@@ -343,9 +353,9 @@ public class LabelProjectServiceImpl implements LabelProjectService {
         }
 
         try {
-            /*if (labelPointType.equals(LabelPointType.PIXEL)) {
+            if (labelPointType.equals(LabelPointType.PIXEL)) {
                 labelObject = LabelPointTypeConvertor.convertLabelPointType(imagePath, labelObject, CoordinateConvertType.PIXEL_REVERSION);
-            }*/
+            }
 
             if (labelPointType.equals(LabelPointType.GEODEGREE)) {
                 if (targetPointType.equals(LabelPointType.PROJECTION)) {
@@ -366,11 +376,11 @@ public class LabelProjectServiceImpl implements LabelProjectService {
             }
             XMLUtils.toXMLFile(savePath, labelObject);
             log.info("保存标注信息成功：坐标类型 {}，保存路径 {} ", targetPointType, savePath);
-            return null;
+            return true;
         } catch (Exception e) {
             log.error("保存标注信息失败：坐标类型 {}，保存路径 {} ", targetPointType, savePath);
-            return e.getMessage();
         }
+        return false;
     }
 
 

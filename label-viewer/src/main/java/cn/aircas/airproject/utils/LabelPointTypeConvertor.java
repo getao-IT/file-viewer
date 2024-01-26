@@ -25,6 +25,7 @@ public class LabelPointTypeConvertor {
             case LONLAT_TO_PIXEL: lonlatToPixel(imagePath,labelPointMap); coordindate = "pixel"; break;
             case PIXEL_TO_LONLAT: pixelToLONLAT(imagePath,labelPointMap); coordindate = "geodegree"; break;
             case PROJECTION_TO_LONLAT: projectionToLONLAT(imagePath,labelPointMap); coordindate = "geodegree"; break;
+            case PROJECTION_TO_PIXEL: projectionToPixel(imagePath,labelPointMap); coordindate = "pixel"; break;
             case PIXEL_TO_PROJECTION: pixelToProjection(imagePath,labelPointMap); coordindate = "geodegree"; break;
             case LONLAT_TO_PROJECTION:  lonlatToProjection(imagePath,labelPointMap); coordindate = "geodegree";  break;
             default: NO_ACTION: break;
