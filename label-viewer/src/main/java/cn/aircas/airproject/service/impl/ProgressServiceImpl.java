@@ -105,17 +105,23 @@ public class ProgressServiceImpl implements ProgressService {
 
     @Override
     public int deleteProgress(String taskId, String filePath, Date startTime) {
-        if (StringUtils.isBlank(taskId) || StringUtils.isBlank(filePath) || startTime == null) {
-            return 2;
-        }
-        List<ProgressContr> progressContrs = ImageUtil.progresss.get(taskId);
-        for (ProgressContr progressContr : progressContrs) {
-            if (progressContr.getFilePath().equalsIgnoreCase(filePath) && progressContr.getStartTime().equals(startTime)) {
-                progressContrs.remove(progressContr);
-                return 0;
+
+        try {
+            if (StringUtils.isBlank(taskId) || StringUtils.isBlank(filePath) || startTime == null) {
+                return 2;
             }
+            List<ProgressContr> progressContrs = ImageUtil.progresss.get(taskId);
+            for (ProgressContr progressContr : progressContrs) {
+                if (progressContr.getFilePath().equalsIgnoreCase(filePath) && progressContr.getStartTime().equals(startTime)) {
+                    progressContrs.remove(progressContr);
+                    return 0;
+                }
+            }
+        } catch (Exception e) {
+            return 1;
         }
-        return 1;
+
+        return 3;
     }
 
 

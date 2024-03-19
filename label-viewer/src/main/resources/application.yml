@@ -8,42 +8,14 @@ spring:
     multipart:
       max-file-size: 100GB  #单个文件数据大小
       max-request-size: 1000GB #总文件大小
-#  datasource:
-#    password: 123456
-#    url: jdbc:postgresql://192.168.3.13:32189/geodl_iecas?useUnicode=true&characterEncoding=utf-8&serverTimezone=GMT%2b8&useSSL=false
-#    username: iecas
-#    driver-class-name: org.postgresql.Driver
-#  jpa:
-#    open-in-view: false
-#    show-sql: true
-#    properties:
-#      hibernate:
-#        temp:
-#          use_jdbc_metadata_defaults: false
-#        hbm2ddl:
-#          auto: update
-
-#mybatis-plus配置
-#mybatis-plus:
-#  mapper-locations: classpath:mapper/*.xml
-#  configuration:
-#    map-underscore-to-camel-case: true
-#    logging:
-#      level:
-#        cn.aircas.fileManager.text.dao: debug
-#    debug: false
-#    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  datasource:
+    driver-class-name: org.sqlite.JDBC
+    url: jdbc:sqlite:sqlite/dexample.db
 
 sys:
-#  rootPath: C:\Users\dell\Desktop
-#  rootDir: C:\Users\dell\Desktop
-#  uploadRootPath: C:\Users\dell\Desktop
   rootPath: C:\Users\Administrator\Desktop
   rootDir: C:\Users\Administrator\Desktop
   uploadRootPath: C:\Users\Administrator\Desktop
-  #rootPath: /home/data
-  #rootDir: /home/data
-  #uploadRootPath: /home/data
 
 value:
   static:

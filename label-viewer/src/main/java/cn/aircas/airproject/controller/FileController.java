@@ -1,23 +1,23 @@
 package cn.aircas.airproject.controller;
 
-import cn.aircas.airproject.callback.GrayConverCallback;
 import cn.aircas.airproject.config.aop.annotation.Log;
 import cn.aircas.airproject.entity.common.CommonResult;
 import cn.aircas.airproject.entity.domain.Slice;
 import cn.aircas.airproject.service.FileProcessingService;
 import cn.aircas.airproject.service.FileService;
+import cn.aircas.airproject.utils.HttpUtils;
 import cn.aircas.airproject.utils.OpenCV;
 import com.alibaba.fastjson.JSONObject;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.xpath.operations.Bool;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.text.ParseException;
-import java.util.Collections;
 import java.util.List;
+
 
 
 @RestController
@@ -32,20 +32,27 @@ public class FileController {
     @Autowired
     FileProcessingService fileProcessingService;
 
+    @Autowired
+    private HttpServletRequest request;
+
 
     @Log(value = "裁切影像指定位置得到切片图片")
     @PostMapping("/custom")
     public CommonResult<String> makeImageSlice(@RequestBody Slice slice) {
+        String clientIp = HttpUtils.getClientIp(request);
+        slice.setProgressId(clientIp);
         this.fileService.makeImageSlice(slice);
-        return new CommonResult<String>().success().message("裁切任务后台处理中...");
+        return new CommonResult<String>().success().data(clientIp).message("裁切任务后台处理中...");
     }
 
 
     @Log(value = "根据宽高裁切影像所有位置得到切片图片")
     @PostMapping("/slice")
     public CommonResult<String> makeImageAllGeoSlice(@RequestBody Slice slice) {
+        String clientIp = HttpUtils.getClientIp(request);
+        slice.setProgressId(HttpUtils.getClientIp(request));
         this.fileService.makeImageAllGeoSlice(slice);
-        return new CommonResult<String>().success().message("裁切任务后台处理中...");
+        return new CommonResult<String>().success().data(clientIp).message("裁切任务后台处理中...");
     }
 
 
@@ -158,26 +165,29 @@ public class FileController {
     @Log(value = "图片格式转换")
     @ApiOperation("图片格式转换")
     @PostMapping("/formatConverter")
-    public CommonResult<String> formatConverter(String progressId, String filePath, String outputPath, String format) throws ParseException {
+    public CommonResult<String> formatConverter(String filePath, String outputPath, String format) throws ParseException {
+        String progressId = HttpUtils.getClientIp(request);
         this.fileProcessingService.formatConverter(progressId, filePath, outputPath, format);
-        return new CommonResult<String>().success().message("格式转换后台进行中");
+        return new CommonResult<String>().success().data(progressId).message("格式转换后台进行中");
     }
 
 
     @Log(value = "图片灰度转换")
     @ApiOperation("图片灰度转换")
     @PostMapping("/rgbGrayConverter")
-    public CommonResult<String> grayConverter(String progressId, String src, String outputPath) {
+    public CommonResult<String> grayConverter(String src, String outputPath) {
+        String progressId = HttpUtils.getClientIp(request);
         this.fileProcessingService.grayConverter(progressId, src, outputPath);
-        return new CommonResult<String>().success().message("图片灰度转换后台进行中");
+        return new CommonResult<String>().success().data(progressId).message("图片灰度转换后台进行中");
     }
 
 
     @Log(value = "OpenCV图片灰度转换")
     @ApiOperation("OpenCV图片灰度转换")
     @PostMapping("/grayConverter")
-    public CommonResult<String> opencvGrayConverter(String progressId, String src, String outputPath) {
+    public CommonResult<String> opencvGrayConverter(String src, String outputPath) {
+        String progressId = HttpUtils.getClientIp(request);
         this.fileProcessingService.opencvGrayConverter(progressId, src, outputPath, OpenCV.NormalizeType.MINMAX, null);
-        return new CommonResult<String>().success().message("OpenCV图片灰度转换后台进行中");
+        return new CommonResult<String>().success().data(progressId).message("OpenCV图片灰度转换后台进行中");
     }
 }

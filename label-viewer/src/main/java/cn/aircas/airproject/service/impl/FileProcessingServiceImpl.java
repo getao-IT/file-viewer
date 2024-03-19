@@ -97,7 +97,7 @@ public class FileProcessingServiceImpl implements FileProcessingService {
 
         try {
             src = FileUtils.getStringPath(this.rootPath, src);
-            dst = FileUtils.getStringPath(this.rootPath, dst);
+            dst = FileUtils.getStringPath(this.rootPath, dst, new File(src).getName());
             Date startTime = DateUtils.parseDate(org.apache.http.client.utils.DateUtils.formatDate(new Date(), "yyyy-MM-dd HH:mm:ss"), new String[]{"yyyy-MM-dd HH:mm:ss"});
             progress = ProgressContr.builder().taskId(progressId).filePath(src).consumTime(0)
                     .fileName(new File(src).getName()).taskType(TaskType.GRAY).status(TaskStatus.WORKING)

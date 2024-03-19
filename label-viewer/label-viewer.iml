@@ -152,6 +152,7 @@
     <orderEntry type="library" name="Maven: com.jcraft:jsch:0.1.55" level="project" />
     <orderEntry type="library" name="Maven: org.springframework:spring-test:5.1.2.RELEASE" level="project" />
     <orderEntry type="library" name="Maven: org.locationtech.jts:jts-core:1.18.2" level="project" />
-    <orderEntry type="library" name="Maven: org:opencv:4.0.1" level="project" />
+    <orderEntry type="library" name="Maven: org:opencv:4.5.5" level="project" />
+    <orderEntry type="library" name="Maven: org.xerial:sqlite-jdbc:3.25.2" level="project" />
   </component>
 </module>

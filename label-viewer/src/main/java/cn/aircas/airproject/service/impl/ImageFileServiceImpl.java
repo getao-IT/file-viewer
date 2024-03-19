@@ -138,7 +138,7 @@ public class ImageFileServiceImpl implements FileTypeService {
         //Image image = this.getById(id);
         String filePath = FileUtils.getStringPath(this.rootPath, imagePath);
 
-        String xmlPath = filePath.replace(FilenameUtils.getExtension(filePath), "xml");
+        String xmlPath = filePath + ".xml";
         XMLLabelObjectInfo xmlLabelObjectInfo = null;
         if (new File(xmlPath).exists()) {
             xmlLabelObjectInfo = XMLUtils.parseXMLFromFile(XMLLabelObjectInfo.class, xmlPath);
@@ -247,7 +247,7 @@ public class ImageFileServiceImpl implements FileTypeService {
         // 是否生成XML
         if (slice.getTakeLabelXml()) {
             // 是否保留空白切片
-            String xmlPath = filePath.replace(FilenameUtils.getExtension(filePath), "xml");
+            String xmlPath = filePath + ".xml";
             if (new File(xmlPath).exists()) {
                 XMLLabelObjectInfo xmlLabelObjectInfo = XMLUtils.parseXMLFromFile(XMLLabelObjectInfo.class, xmlPath);
                 double[] newRang = range;
@@ -285,7 +285,7 @@ public class ImageFileServiceImpl implements FileTypeService {
      * @param range
      */
     public void takeSliceXml(String filePath, String slicePath, double[] range) {
-        String xmlPath = filePath.replace(FilenameUtils.getExtension(filePath), "xml");
+        String xmlPath = filePath + ".xml";
         XMLLabelObjectInfo xmlLabelObjectInfo = XMLUtils.parseXMLFromFile(XMLLabelObjectInfo.class, xmlPath);
         List<XMLLabelObjectInfo.XMLLabelObject> xmlLabelObjectList = xmlLabelObjectInfo.getXMLLabelObjectList();
         List<XMLLabelObjectInfo.XMLLabelObject> sliceXmlLabelObject = new ArrayList<>();
@@ -335,7 +335,7 @@ public class ImageFileServiceImpl implements FileTypeService {
             sliceXmlLabelObject.add(xmlLabelObject);
         }
         xmlLabelObjectInfo.setXMLLabelObjectList(sliceXmlLabelObject);
-        String saveXmlPath = slicePath.replace(FilenameUtils.getExtension(slicePath), "xml");
+        String saveXmlPath = slicePath + ".xml";
         XMLUtils.toXMLFile(saveXmlPath, xmlLabelObjectInfo);
         log.info("生成切片 {} 并保存XML文件 {} 成功 ", slicePath, saveXmlPath);
     }

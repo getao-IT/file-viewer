@@ -1,16 +1,18 @@
 package cn.aircas.airproject.utils;
 
-import org.springframework.stereotype.Component;
-
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 
+
+
 public class DateUtils {
 
     private static Calendar calendar;
+
     private static Calendar staiticCalendar;
+
 
     /**
      * 返回days天前的时间
@@ -35,6 +37,7 @@ public class DateUtils {
         return parseDate;
     }
 
+
     /**
      * 返回hours小时前的时间
      * @param date 基准时间
@@ -45,7 +48,7 @@ public class DateUtils {
     public static Date getHoursBeforDate(Date date, int hours) {
         calendar = Calendar.getInstance();
         calendar.setTimeInMillis(date.getTime());
-        calendar.add(Calendar.DAY_OF_YEAR, -hours);
+        calendar.add(Calendar.HOUR_OF_DAY, hours);
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         String format = dateFormat.format(new Date(calendar.getTimeInMillis()));
         Date parseDate = null;
@@ -57,6 +60,8 @@ public class DateUtils {
 
         return parseDate;
     }
+
+
     /**
      * 返回当前时间未来days天的时间
      * @param days 范围天数
@@ -78,6 +83,7 @@ public class DateUtils {
         return parseDate;
     }
 
+
     /**
      * 获取指定参数的明天的0点时间
      * @param date
@@ -95,6 +101,7 @@ public class DateUtils {
         return calendar.getTime();
     }
 
+
     /**
      * 获取指定时间的当天最后时间
      * @param date
@@ -110,6 +117,7 @@ public class DateUtils {
 
         return calendar.getTime();
     }
+
 
     /**
      * 获取本周最后时刻
@@ -128,6 +136,7 @@ public class DateUtils {
         return calendar.getTime();
     }
 
+
     /**
      * 获取指定时间的当月最后时刻
      * @param date
@@ -145,6 +154,7 @@ public class DateUtils {
         return calendar.getTime();
     }
 
+
     /**
      * 获取指定时间的下一个月的开始时刻
      * @param date
@@ -161,6 +171,7 @@ public class DateUtils {
 
         return calendar.getTime();
     }
+
 
     /**
      * 根据参数返回固定格式的日期
@@ -181,6 +192,7 @@ public class DateUtils {
 
         return dateFormat.format(date);
     }
+
 
     /**
      * 返回当前时间是第几周
