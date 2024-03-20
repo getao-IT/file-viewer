@@ -1,3 +1,5 @@
+package cn.aircas.airproject;
+
 import cn.aircas.airproject.FileProcessApplication;
 import cn.aircas.airproject.callback.impl.GrayConverCallbackImpl;
 import cn.aircas.airproject.entity.domain.ProgressContr;
@@ -12,6 +14,7 @@ import cn.aircas.airproject.service.ProgressService;
 import cn.aircas.airproject.service.impl.ProgressServiceImpl;
 import cn.aircas.airproject.utils.ImageUtil;
 import cn.aircas.airproject.utils.OpenCV;
+import cn.aircas.airproject.utils.SQLiteUtils;
 import com.alibaba.fastjson.JSONObject;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.http.client.utils.DateUtils;
@@ -22,6 +25,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -38,6 +42,18 @@ public class Test {
 
     @Autowired
     private FileProcessingService server;
+
+    @Autowired
+    private SQLiteUtils sqLiteUtils;
+
+    @org.junit.Test
+    public void createTable() throws SQLException {
+        String sql = "CREATE TABLE tb_gt_test (\n" +
+                "\tID int4 PRIMARY KEY\n" +
+                ")";
+        sqLiteUtils.getSQLiteConnetion("jdbc:sqlite:test.db");
+        sqLiteUtils.createTable(sql);
+    }
 
     @org.junit.Test
     public void test() throws IOException {
