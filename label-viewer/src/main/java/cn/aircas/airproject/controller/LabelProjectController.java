@@ -7,31 +7,42 @@ import cn.aircas.airproject.entity.domain.*;
 import cn.aircas.airproject.entity.emun.LabelPointType;
 import cn.aircas.airproject.entity.emun.ResultCode;
 import cn.aircas.airproject.service.RemoteLabelProjectService;
+import cn.aircas.airproject.utils.UserService;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiImplicitParams;
 import io.swagger.annotations.ApiOperation;
 import net.sf.json.JSONObject;
 import org.json.XML;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpRequest;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import cn.aircas.airproject.service.LabelProjectService;
 
-import java.io.File;
+import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+
+
 
 @RestController
 @RequestMapping("/labelProject")
 public class LabelProjectController {
 
     @Autowired
+    private HttpServletRequest request;
+
+    @Autowired
     LabelProjectService labelProjectService;
 
     @Autowired
     RemoteLabelProjectService remoteLabelProjectService;
+
+    @Autowired
+    private UserService userService;
+
 
     @ApiOperation("上传文件")
     @ApiImplicitParams({
@@ -42,9 +53,14 @@ public class LabelProjectController {
     @Log("上传文件")
     @PostMapping(value = "/uploadFile")
     public CommonResult<String> uploadFile(String imagePath , LabelPointType labelPointType , MultipartFile file) throws Exception {
-        String json = labelProjectService.uploadFile(imagePath, labelPointType ,file);
-        return new CommonResult<String>().success(ResultCode.SUCCESS).data(json).message("上传文件成功!");
+        boolean isAdmin = userService.isAdmin(request.getHeader("token"));
+        if (isAdmin) {
+            String json = labelProjectService.uploadFile(imagePath, labelPointType ,file);
+            return new CommonResult<String>().success(ResultCode.SUCCESS).data(json).message("上传文件成功!");
+        }
+        return new CommonResult<String>().fail(ResultCode.FAIL_PERMISSION_DENIED).message("无操作权限!");
     }
+
 
     @ApiOperation("从服务器打开xml文件")
     @ApiImplicitParams({
@@ -58,6 +74,7 @@ public class LabelProjectController {
         String json = labelProjectService.viewXmlFile(imagePath, labelPointType ,xmlPath);
         return new CommonResult<String>().success(ResultCode.SUCCESS).data(json).message("从服务器打开xml文件成功!");
     }
+
 
     @ApiOperation("获取文件夹下的文件和子文件夹")
     @ApiImplicitParams({
@@ -73,6 +90,7 @@ public class LabelProjectController {
             return new CommonResult<List<FileAndFolder>>().data(folderList).success(ResultCode.SUCCESS).message("获取文件和文件夹数据成功!");
     }
 
+
     @ApiOperation("获取文件夹下的子文件夹")
     @ApiImplicitParams({
             @ApiImplicitParam(name = "path",dataType = "string",required = true,value = "路径",paramType = "query")
@@ -84,6 +102,7 @@ public class LabelProjectController {
         return new CommonResult<List<FolderPac>>().data(folderList).success(ResultCode.SUCCESS).message("获取子文件夹数据成功!");
     }
 
+
     @ApiOperation("获取文件夹下的文件")
     @ApiImplicitParams({
             @ApiImplicitParam(name = "path",dataType = "string",required = true,value = "路径",paramType = "query")
@@ -94,6 +113,7 @@ public class LabelProjectController {
         List<FilePac> fileList = labelProjectService.getFileList(path);
         return new CommonResult<List<FilePac>>().data(fileList).success(ResultCode.SUCCESS).message("获取文件数据成功!");
     }
+
 
     @ApiOperation("解析图片")
     @ApiImplicitParams({
@@ -115,6 +135,7 @@ public class LabelProjectController {
     }
 */
 
+
     @ApiOperation("Xml转换为Json")
     @ApiImplicitParams({
             @ApiImplicitParam(name = "multipartFile",dataType = "MultipartFile",required = true,paramType = "query")
@@ -128,6 +149,7 @@ public class LabelProjectController {
         return jsonObject.toString();
     }
 
+
     @ApiOperation("保存Label")
     @ApiImplicitParams({
             @ApiImplicitParam(name = "saveLabelRequest",dataType = "SaveLabelRequest",required = true,paramType = "body")
@@ -138,6 +160,7 @@ public class LabelProjectController {
         return new CommonResult<String>().data(null).success(ResultCode.SUCCESS).message("保存标注信息成功!");
     }
 
+
     @ApiOperation("importTag")
     @ApiImplicitParams({
             @ApiImplicitParam(name = "tagFilePath",dataType = "string",value = "路径",required = true,paramType = "query")
@@ -147,6 +170,7 @@ public class LabelProjectController {
         List<String> tagList = labelProjectService.importTag(tagFilePath);
         return new CommonResult<List<String>>().data(tagList).success(ResultCode.SUCCESS).message("导入标签文件成功!");
     }
+
 
     /**
      * 复制文件夹
@@ -162,9 +186,14 @@ public class LabelProjectController {
     @Log("复制文件")
     @PostMapping(value = "/copyFileAndFolder")
     public CommonResult<List<FileAndFolder>> copyFileAndFolder(String srcPath, String destPath) {
-        labelProjectService.copyFileAndFolder(srcPath, destPath);
-        return new CommonResult<List<FileAndFolder>>().data(null).success(ResultCode.SUCCESS).message("复制文件夹或文件成功！");
+        boolean isAdmin = userService.isAdmin(request.getHeader("token"));
+        if (isAdmin) {
+            labelProjectService.copyFileAndFolder(srcPath, destPath);
+            return new CommonResult<List<FileAndFolder>>().data(null).success(ResultCode.SUCCESS).message("复制文件夹或文件成功！");
+        }
+        return new CommonResult<List<FileAndFolder>>().fail(ResultCode.FAIL_PERMISSION_DENIED).message("无操作权限!");
     }
+
 
     /**
      * 删除文件或文件夹
@@ -177,9 +206,14 @@ public class LabelProjectController {
     })
     @DeleteMapping(value = "/deleteFileOrFolder")
     public CommonResult<Boolean> deleteFileOrFolder(String srcPath) {
-        boolean result = labelProjectService.deleteFileOrFolder(srcPath);
-        return new CommonResult<Boolean>().data(result).success(ResultCode.SUCCESS).message(result ? "删除成功！" : "删除失败！");
+        boolean isAdmin = userService.isAdmin(request.getHeader("token"));
+        if (isAdmin) {
+            boolean result = labelProjectService.deleteFileOrFolder(srcPath);
+            return new CommonResult<Boolean>().data(result).success(ResultCode.SUCCESS).message(result ? "删除成功！" : "删除失败！");
+        }
+        return new CommonResult<Boolean>().fail(ResultCode.FAIL_PERMISSION_DENIED).message("无操作权限!");
     }
+
 
     /**
      * 重命名文件或文件夹
@@ -193,9 +227,15 @@ public class LabelProjectController {
     })
     @PutMapping(value = "/fileRename")
     public CommonResult<String> fileRename(@RequestBody FileManagerParams params) {
-        String result = labelProjectService.fileRename(params.getOldName(), params.getNewName());
-        return new CommonResult<String>().data(result).success(ResultCode.SUCCESS).message(result);
+        boolean isAdmin = userService.isAdmin(request.getHeader("token"));
+        if (isAdmin) {
+            String result = labelProjectService.fileRename(params.getOldName(), params.getNewName());
+            return new CommonResult<String>().data(result).success(ResultCode.SUCCESS).message(result);
+        }
+        return new CommonResult<String>().fail(ResultCode.FAIL_PERMISSION_DENIED).message("无操作权限!");
+
     }
+
 
     /**
      * 获取属性信息
@@ -212,6 +252,7 @@ public class LabelProjectController {
         return new CommonResult<FileInfo>().data(fileInfo).success(ResultCode.SUCCESS).message(fileInfo == null ? "路径不存在！" : "获取属性信息成功！");
     }
 
+
     /**
      * 创建文件
      * @param path
@@ -223,16 +264,21 @@ public class LabelProjectController {
     })
     @PostMapping(value = "/createFile")
     public CommonResult<Boolean> createFile(String path) {
-        boolean result = labelProjectService.createFile(path);
-        CommonResult<Boolean> commonResult = new CommonResult<>();
-        commonResult.data(null);
-        if (result) {
-            commonResult.success(ResultCode.SUCCESS);
-        } else {
-            commonResult.fail(ResultCode.FAIL);
+        boolean isAdmin = userService.isAdmin(request.getHeader("token"));
+        if (isAdmin) {
+            boolean result = labelProjectService.createFile(path);
+            CommonResult<Boolean> commonResult = new CommonResult<>();
+            commonResult.data(null);
+            if (result) {
+                commonResult.success(ResultCode.SUCCESS);
+            } else {
+                commonResult.fail(ResultCode.FAIL);
+            }
+            return commonResult.message(result ? "创建文件成功！" : "创建文件失败！");
         }
-        return commonResult.message(result ? "创建文件成功！" : "创建文件失败！");
+        return new CommonResult<Boolean>().fail(ResultCode.FAIL_PERMISSION_DENIED).message("无操作权限!");
     }
+
 
     /**
      * 创建文件夹
@@ -245,16 +291,21 @@ public class LabelProjectController {
     })
     @PostMapping(value = "/createFolder")
     public CommonResult<Boolean> createFolder(String path) {
-        boolean result = labelProjectService.createFolder(path);
-        CommonResult<Boolean> commonResult = new CommonResult<>();
-        commonResult.data(null);
-        if (result) {
-            commonResult.success(ResultCode.SUCCESS);
-        } else {
-            commonResult.fail(ResultCode.FAIL);
+        boolean isAdmin = userService.isAdmin(request.getHeader("token"));
+        if (isAdmin) {
+            boolean result = labelProjectService.createFolder(path);
+            CommonResult<Boolean> commonResult = new CommonResult<>();
+            commonResult.data(null);
+            if (result) {
+                commonResult.success(ResultCode.SUCCESS);
+            } else {
+                commonResult.fail(ResultCode.FAIL);
+            }
+            return commonResult.message(result ? "创建文件夹成功！" : "创建文件夹失败！");
         }
-        return commonResult.message(result ? "创建文件夹成功！" : "创建文件夹失败！");
+        return new CommonResult<Boolean>().fail(ResultCode.FAIL_PERMISSION_DENIED).message("无操作权限!");
     }
+
 
     /**
      * 获取文件内容
@@ -287,6 +338,7 @@ public class LabelProjectController {
         return commonResult;
     }
 
+
     /**
      * 将内容写入文件
      * @param fileInfo 根路径后的目标文件路径\写入内容\是否追加
@@ -299,16 +351,21 @@ public class LabelProjectController {
     @Log
     @PutMapping(value = "/writeFile")
     public CommonResult<String> writeFile(@RequestBody FileInfo fileInfo) {
-        boolean result = labelProjectService.writeFile(fileInfo.getPath(), fileInfo.getContent(), false);
-        CommonResult<String> commonResult = new CommonResult<>();
-        commonResult.data(fileInfo.getContent());
-        if (result) {
-            commonResult.success(ResultCode.SUCCESS);
-        } else {
-            commonResult.fail(ResultCode.FAIL);
+        boolean isAdmin = userService.isAdmin(request.getHeader("token"));
+        if (isAdmin) {
+            boolean result = labelProjectService.writeFile(fileInfo.getPath(), fileInfo.getContent(), false);
+            CommonResult<String> commonResult = new CommonResult<>();
+            commonResult.data(fileInfo.getContent());
+            if (result) {
+                commonResult.success(ResultCode.SUCCESS);
+            } else {
+                commonResult.fail(ResultCode.FAIL);
+            }
+            return commonResult.message(result ? "保存文件成功！" : "保存文件失败！");
         }
-        return commonResult.message(result ? "保存文件成功！" : "保存文件失败！");
+        return new CommonResult<String>().fail(ResultCode.FAIL_PERMISSION_DENIED).message("无操作权限!");
     }
+
 
     @ApiOperation("下载文件")
     @ApiImplicitParams({
@@ -316,9 +373,14 @@ public class LabelProjectController {
     })
     @PostMapping("/download")
     public CommonResult<String> downLoad(String src_file_path) {
-        CommonResult result = labelProjectService.downLoad(src_file_path);
-        return result;
+        boolean isAdmin = userService.isAdmin(request.getHeader("token"));
+        if (isAdmin) {
+            CommonResult result = labelProjectService.downLoad(src_file_path);
+            return result;
+        }
+        return new CommonResult<String>().fail(ResultCode.FAIL_PERMISSION_DENIED).message("无操作权限!");
     }
+
 
     @ApiOperation("上传文件到服务器")
     @ApiImplicitParams({
@@ -327,9 +389,13 @@ public class LabelProjectController {
     })
     @PostMapping("/upload")
     public CommonResult<String> upload(@RequestBody(required = true) MultipartFile srcFile, String destPath) throws IOException {
-        String progressId = UUID.randomUUID().toString().replace("-", "");
-        labelProjectService.upload(progressId, srcFile.getInputStream(), destPath, srcFile.getOriginalFilename());
-        return new CommonResult<String>().data(progressId).success(ResultCode.SUCCESS).message("上传文件操作成功！");
+        boolean isAdmin = userService.isAdmin(request.getHeader("token"));
+        if (isAdmin) {
+            String progressId = UUID.randomUUID().toString().replace("-", "");
+            labelProjectService.upload(progressId, srcFile.getInputStream(), destPath, srcFile.getOriginalFilename());
+            return new CommonResult<String>().data(progressId).success(ResultCode.SUCCESS).message("上传文件操作成功！");
+        }
+        return new CommonResult<String>().fail(ResultCode.FAIL_PERMISSION_DENIED).message("无操作权限!");
     }
 
 
