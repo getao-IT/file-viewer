@@ -21,3 +21,8 @@ value:
   static:
     path-pattern: /static/file/**
     static-locations: file:c:/
+
+database:
+  databasePath: jdbc:sqlite:dbs/tb_label_tag.db
+  tagParentTabelName: tb_label_tag_parent_info
+  tagChildrenTabelName: tb_label_tag_children_info

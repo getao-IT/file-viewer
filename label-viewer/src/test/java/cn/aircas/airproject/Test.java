@@ -2,6 +2,7 @@ package cn.aircas.airproject;
 
 import cn.aircas.airproject.FileProcessApplication;
 import cn.aircas.airproject.callback.impl.GrayConverCallbackImpl;
+import cn.aircas.airproject.entity.domain.LabelTagParent;
 import cn.aircas.airproject.entity.domain.ProgressContr;
 import cn.aircas.airproject.entity.domain.SaveLabelRequest;
 import cn.aircas.airproject.entity.dto.ProgressContrDto;
@@ -25,13 +26,11 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
-import java.util.TimeZone;
+import java.util.*;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = FileProcessApplication.class)
@@ -47,12 +46,88 @@ public class Test {
     private SQLiteUtils sqLiteUtils;
 
     @org.junit.Test
-    public void createTable() throws SQLException {
-        String sql = "CREATE TABLE tb_gt_test (\n" +
+    public void createTable() throws SQLException, IllegalAccessException {
+        // 获取连接
+        SQLiteUtils.getSQLiteConnection("jdbc:sqlite:dbs/tb_label_tag.db");
+
+        // 创建数据库
+        /*String sql = "CREATE TABLE tb_gt_test (\n" +
                 "\tID int4 PRIMARY KEY\n" +
-                ")";
-        sqLiteUtils.getSQLiteConnetion("jdbc:sqlite:test.db");
-        sqLiteUtils.createTable(sql);
+                ")";*/
+        String sql = "CREATE TABLE tb_label_tag_info (\n" +
+                "\tid int4 PRIMARY KEY,\n" +
+                "\ttag_name TEXT NOT NULL,\n" +
+                "\ttag_childrens TEXT NOT NULL\n" +
+                ");";
+        SQLiteUtils.createTable(sql);
+
+        // 释放连接
+        SQLiteUtils.deSQLiteConnection();
+    }
+
+    @org.junit.Test
+    public void insert() throws SQLException, IllegalAccessException {
+        // 获取连接
+        SQLiteUtils.getSQLiteConnection("jdbc:sqlite:dbs/tb_label_tag.db");
+
+        // 插入数据
+        LabelTagParent parent = new LabelTagParent();
+        parent.setId(5);
+        parent.setTag_name("飞机");
+        parent.setTag_childrens("4,5,6");
+        SQLiteUtils.insert(parent, "tb_label_tag_info");
+
+        // 释放连接
+        SQLiteUtils.deSQLiteConnection();
+    }
+
+    @org.junit.Test
+    public void query() throws SQLException, IllegalAccessException {
+        // 获取连接
+        SQLiteUtils.getSQLiteConnection("jdbc:sqlite:dbs/tb_label_tag.db");
+
+        // 查询数据
+        List<Object> tb_label_tag_info = SQLiteUtils.queryList(LabelTagParent.class, "tb_label_tag_info");
+        for (Object o : tb_label_tag_info) {
+            System.out.println("=======================第"+tb_label_tag_info.indexOf(o)+"个数据");
+            Class<?> aClass = o.getClass();
+            Field[] fields = aClass.getDeclaredFields();
+            for(int i = 0; i < fields.length; i++) {
+                fields[i].setAccessible(true);
+                System.out.println(fields[i].getName() + ": " + fields[i].get(o));
+            }
+        }
+
+        // 释放连接
+        SQLiteUtils.deSQLiteConnection();
+    }
+
+    @org.junit.Test
+    public void update() throws SQLException, IllegalAccessException {
+        // 获取连接
+        SQLiteUtils.getSQLiteConnection("jdbc:sqlite:dbs/tb_label_tag.db");
+
+        // 更新数据
+        LabelTagParent updateParent = new LabelTagParent();
+        updateParent.setId(5);
+        updateParent.setTag_name("舰船");
+        updateParent.setTag_childrens("7,8,9");
+        SQLiteUtils.updateById(updateParent, "tb_label_tag_info");
+
+        // 释放连接
+        SQLiteUtils.deSQLiteConnection();
+    }
+
+    @org.junit.Test
+    public void delete() throws SQLException, IllegalAccessException {
+        // 获取连接
+        SQLiteUtils.getSQLiteConnection("jdbc:sqlite:dbs/tb_label_tag.db");
+
+        // 删除数据
+        SQLiteUtils.deleteById("tb_label_tag_parent_info", -1);
+
+        // 释放连接
+        SQLiteUtils.deSQLiteConnection();
     }
 
     @org.junit.Test
