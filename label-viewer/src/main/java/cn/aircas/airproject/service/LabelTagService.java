@@ -1,7 +1,6 @@
 package cn.aircas.airproject.service;
 
-import cn.aircas.airproject.entity.dto.LabelTagDto;
-
+import cn.aircas.airproject.entity.domain.LabelTagDatabaseInfo;
 import java.util.List;
 
 
@@ -10,11 +9,11 @@ import java.util.List;
  */
 public interface LabelTagService<T> {
 
-    boolean createTable(String createSql);
+    boolean executeSql(String createSql);
 
     boolean insert(T object);
 
-    List<Object> queryList(Class<T> clazz);
+    List<Object> queryList(Class<T> clazz, Object params);
 
     boolean updateById(T object);
 

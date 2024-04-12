@@ -23,6 +23,6 @@ value:
     static-locations: file:c:/
 
 database:
-  databasePath: jdbc:sqlite:dbs/tb_label_tag.db
+  databasePath: jdbc:sqlite:dbs
   tagParentTabelName: tb_label_tag_parent_info
   tagChildrenTabelName: tb_label_tag_children_info

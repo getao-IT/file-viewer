@@ -2,6 +2,7 @@ package cn.aircas.airproject;
 
 import cn.aircas.airproject.FileProcessApplication;
 import cn.aircas.airproject.callback.impl.GrayConverCallbackImpl;
+import cn.aircas.airproject.entity.domain.LabelTagChildren;
 import cn.aircas.airproject.entity.domain.LabelTagParent;
 import cn.aircas.airproject.entity.domain.ProgressContr;
 import cn.aircas.airproject.entity.domain.SaveLabelRequest;
@@ -59,7 +60,7 @@ public class Test {
                 "\ttag_name TEXT NOT NULL,\n" +
                 "\ttag_childrens TEXT NOT NULL\n" +
                 ");";
-        SQLiteUtils.createTable(sql);
+        SQLiteUtils.executeSql(sql);
 
         // 释放连接
         SQLiteUtils.deSQLiteConnection();
@@ -84,10 +85,16 @@ public class Test {
     @org.junit.Test
     public void query() throws SQLException, IllegalAccessException {
         // 获取连接
-        SQLiteUtils.getSQLiteConnection("jdbc:sqlite:dbs/tb_label_tag.db");
+        SQLiteUtils.getSQLiteConnection("jdbc:sqlite:dbs/default.db");
+
+        LabelTagParent labelTagParent = new LabelTagParent();
+        labelTagParent.setTag_name("飞机");
+        LabelTagChildren children = new LabelTagChildren();
+        children.setParent_id(1);
+        children.setProperties_name("巡洋舰");
 
         // 查询数据
-        List<Object> tb_label_tag_info = SQLiteUtils.queryList(LabelTagParent.class, "tb_label_tag_info");
+        List<Object> tb_label_tag_info = SQLiteUtils.queryList(LabelTagChildren.class, "tb_label_tag_children_info", children);
         for (Object o : tb_label_tag_info) {
             System.out.println("=======================第"+tb_label_tag_info.indexOf(o)+"个数据");
             Class<?> aClass = o.getClass();

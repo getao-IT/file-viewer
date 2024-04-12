@@ -51,6 +51,10 @@ public class HttpUtils {
         if (ip == null || ip.length() == 0 || unknown.equalsIgnoreCase(ipAddresses)) {
             ip = request.getRemoteAddr();
         }
+
+        if (ip.contains(":")) {
+            ip = ip.replace(":", "");
+        }
         return ip;
     }
 }

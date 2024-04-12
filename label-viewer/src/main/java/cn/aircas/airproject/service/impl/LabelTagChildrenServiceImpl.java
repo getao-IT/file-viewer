@@ -15,9 +15,9 @@ public class LabelTagChildrenServiceImpl implements LabelTagService<LabelTagChil
 
 
     @Override
-    public boolean createTable(String createSql) {
+    public boolean executeSql(String createSql) {
         try {
-            SQLiteUtils.createTable(createSql);
+            SQLiteUtils.executeSql(createSql);
             return true;
         } catch (SQLException throwables) {
             throwables.printStackTrace();
@@ -39,9 +39,9 @@ public class LabelTagChildrenServiceImpl implements LabelTagService<LabelTagChil
 
 
     @Override
-    public List<Object> queryList(Class clazz) {
+    public List<Object> queryList(Class clazz, Object params) {
         try {
-            List<Object> queryList = SQLiteUtils.queryList(clazz, SQLiteUtils.childrenTabelName);
+            List<Object> queryList = SQLiteUtils.queryList(clazz, SQLiteUtils.childrenTabelName, params);
             if (queryList != null && queryList.size() != 0) {
                 return queryList;
             }

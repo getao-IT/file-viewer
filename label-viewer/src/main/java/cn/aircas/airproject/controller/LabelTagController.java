@@ -2,12 +2,18 @@ package cn.aircas.airproject.controller;
 
 import cn.aircas.airproject.config.aop.annotation.Log;
 import cn.aircas.airproject.entity.common.CommonResult;
+import cn.aircas.airproject.entity.domain.LabelTagChildren;
+import cn.aircas.airproject.entity.domain.LabelTagDatabaseInfo;
 import cn.aircas.airproject.entity.domain.LabelTagParent;
 import cn.aircas.airproject.entity.dto.LabelTagDto;
 import cn.aircas.airproject.service.impl.LabelTagChildrenServiceImpl;
 import cn.aircas.airproject.service.impl.LabelTagParentServiceImpl;
+import cn.aircas.airproject.utils.SQLiteUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
+
+import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 
 
@@ -19,11 +25,34 @@ import java.util.List;
 @RequestMapping(value = "/labelTag")
 public class LabelTagController {
 
+    @Value(value = "${database.databasePath}")
+    private String databasePath;
+
+    @Autowired
+    private HttpServletRequest request;
+
     @Autowired
     private LabelTagChildrenServiceImpl childrenService;
 
     @Autowired
     private LabelTagParentServiceImpl parentService;
+
+
+    @Log("获取标签库列表")
+    @GetMapping("/listLabelTagDatabase")
+    public CommonResult<List<LabelTagDatabaseInfo>> listLabelTagDatabase() {
+        List<LabelTagDatabaseInfo> result = SQLiteUtils.listLabelTagDatabase(request);
+        return new CommonResult<List<LabelTagDatabaseInfo>>().success().data(result).message("获取标签库列表成功");
+    }
+
+
+    @Log("获取标签库连接")
+    @GetMapping("/getConnect")
+    public CommonResult<String> getConnect(String ip) {
+        String dbPath = databasePath + "/" + ip + ".db";
+        SQLiteUtils.getSQLiteConnection(dbPath);
+        return new CommonResult<String>().success().data(ip).message("获取标签库连接成功");
+    }
 
 
     @Log("获取标签库信息")
@@ -34,6 +63,9 @@ public class LabelTagController {
     }
 
 
+    /**
+     * { "tag_name": "舰船" }
+     */
     @Log("增加一级标签")
     @PostMapping("/addLabelTagParent")
     public CommonResult<Boolean> addLParentTag(@RequestBody LabelTagParent tagParent) {
@@ -45,14 +77,72 @@ public class LabelTagController {
     }
 
 
-    @Log("创建数据库表")
-    @PostMapping("/createTable")
-    public CommonResult<Boolean> createTable(String sql) {
-        boolean create = parentService.createTable(sql);
-        if (create) {
-            return new CommonResult<Boolean>().success().message("创建数据库表成功");
+    /**
+     * { "parent_id": 1, "tag_name": "巡洋舰", "properties_name":"巡洋舰" , "properties_color": "rgb(255,255,255)" }
+     */
+    @Log("增加二级标签")
+    @PostMapping("/addLabelTagChildren")
+    public CommonResult<Boolean> addChildrenTag(@RequestBody LabelTagChildren tagChildren) {
+        boolean insert = childrenService.insert(tagChildren);
+        if (insert) {
+            return new CommonResult<Boolean>().success().message("增加二级标签成功");
         }
-        return new CommonResult<Boolean>().success().message("创建数据库表失败");
+        return new CommonResult<Boolean>().success().message("增加二级标签失败");
+    }
+
+
+    @Log("更新一级标签")
+    @PutMapping("/updateLabelTagParent")
+    public CommonResult<Boolean> updateLabelTagParent(@RequestBody LabelTagParent tagParent) {
+        boolean insert = parentService.updateById(tagParent);
+        if (insert) {
+            return new CommonResult<Boolean>().success().message("更新一级标签成功");
+        }
+        return new CommonResult<Boolean>().success().message("更新一级标签失败");
+    }
+
+
+    @Log("更新二级标签")
+    @PutMapping("/updateLabelTagChildren")
+    public CommonResult<Boolean> updateChildrenTag(@RequestBody LabelTagChildren tagChildren) {
+        boolean insert = childrenService.updateById(tagChildren);
+        if (insert) {
+            return new CommonResult<Boolean>().success().message("更新二级标签成功");
+        }
+        return new CommonResult<Boolean>().success().message("更新二级标签失败");
+    }
+
+
+    @Log("删除一级标签")
+    @DeleteMapping("/deleteLabelTagParent")
+    public CommonResult<Boolean> deleteLabelTagParent(int id) {
+        boolean insert = parentService.deleteById(id);
+        if (insert) {
+            return new CommonResult<Boolean>().success().message("删除一级标签成功");
+        }
+        return new CommonResult<Boolean>().success().message("删除一级标签失败");
+    }
+
+
+    @Log("删除二级标签")
+    @DeleteMapping("/deleteLabelTagChildren")
+    public CommonResult<Boolean> deleteChildrenTag(int id) {
+        boolean insert = childrenService.deleteById(id);
+        if (insert) {
+            return new CommonResult<Boolean>().success().message("删除二级标签成功");
+        }
+        return new CommonResult<Boolean>().success().message("删除二级标签失败");
+    }
+
+
+    @Log("执行SQL")
+    @PostMapping("/executeSql")
+    public CommonResult<Boolean> executeSql(String sql) {
+        boolean create = parentService.executeSql(sql);
+        if (create) {
+            return new CommonResult<Boolean>().success().message("执行SQL成功");
+        }
+        return new CommonResult<Boolean>().success().message("执行SQL失败");
     }
 
 }

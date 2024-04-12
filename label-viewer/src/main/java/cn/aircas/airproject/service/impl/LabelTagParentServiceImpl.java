@@ -8,6 +8,7 @@ import cn.aircas.airproject.utils.SQLiteUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -22,9 +23,9 @@ public class LabelTagParentServiceImpl implements LabelTagService<LabelTagParent
 
 
     @Override
-    public boolean createTable(String createSql) {
+    public boolean executeSql(String createSql) {
         try {
-            SQLiteUtils.createTable(createSql);
+            SQLiteUtils.executeSql(createSql);
             return true;
         } catch (SQLException throwables) {
             throwables.printStackTrace();
@@ -46,9 +47,9 @@ public class LabelTagParentServiceImpl implements LabelTagService<LabelTagParent
 
 
     @Override
-    public List<Object> queryList(Class clazz) {
+    public List<Object> queryList(Class clazz, Object params) {
         try {
-            List<Object> queryList = SQLiteUtils.queryList(clazz, SQLiteUtils.parentTabelName);
+            List<Object> queryList = SQLiteUtils.queryList(clazz, SQLiteUtils.parentTabelName, params);
             if (queryList != null && queryList.size() != 0) {
                 return queryList;
             }
@@ -75,6 +76,15 @@ public class LabelTagParentServiceImpl implements LabelTagService<LabelTagParent
     public boolean deleteById(int deleteId) {
         try {
             SQLiteUtils.deleteById(SQLiteUtils.parentTabelName, deleteId);
+            LabelTagChildren children = new LabelTagChildren();
+            children.setParent_id(deleteId);
+            List<Object> objects = childrenService.queryList(LabelTagChildren.class, children);
+            if (objects == null)
+                return true;
+            for (Object object : objects) {
+                LabelTagChildren e = (LabelTagChildren) object;
+                childrenService.deleteById(e.getId());
+            }
             return true;
         } catch (SQLException throwables) {
             throwables.printStackTrace();
@@ -83,10 +93,11 @@ public class LabelTagParentServiceImpl implements LabelTagService<LabelTagParent
     }
 
 
+
     public List<LabelTagDto> listLabelTag() {
         List<LabelTagDto> result = new ArrayList<>();
         try {
-            List<Object> tagParents = SQLiteUtils.queryList(LabelTagParent.class, SQLiteUtils.parentTabelName);
+            List<Object> tagParents = SQLiteUtils.queryList(LabelTagParent.class, SQLiteUtils.parentTabelName, null);
             for (Object tagParent : tagParents) {
                 LabelTagParent tagp = (LabelTagParent) tagParent;
                 String[] cols = new String[]{"parent_id"};
