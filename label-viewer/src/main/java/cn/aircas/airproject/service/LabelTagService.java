@@ -11,7 +11,7 @@ public interface LabelTagService<T> {
 
     boolean executeSql(String createSql);
 
-    boolean insert(T object);
+    int insert(T object);
 
     List<Object> queryList(Class<T> clazz, Object params);
 

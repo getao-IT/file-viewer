@@ -8,11 +8,12 @@ import cn.aircas.airproject.entity.domain.LabelTagParent;
 import cn.aircas.airproject.entity.dto.LabelTagDto;
 import cn.aircas.airproject.service.impl.LabelTagChildrenServiceImpl;
 import cn.aircas.airproject.service.impl.LabelTagParentServiceImpl;
+import cn.aircas.airproject.utils.HttpUtils;
 import cn.aircas.airproject.utils.SQLiteUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
-
+import org.springframework.web.multipart.MultipartFile;
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 
@@ -25,8 +26,8 @@ import java.util.List;
 @RequestMapping(value = "/labelTag")
 public class LabelTagController {
 
-    @Value(value = "${database.databasePath}")
-    private String databasePath;
+    @Value(value = "${database.driverPath}")
+    private String driverPath;
 
     @Autowired
     private HttpServletRequest request;
@@ -42,14 +43,15 @@ public class LabelTagController {
     @GetMapping("/listLabelTagDatabase")
     public CommonResult<List<LabelTagDatabaseInfo>> listLabelTagDatabase() {
         List<LabelTagDatabaseInfo> result = SQLiteUtils.listLabelTagDatabase(request);
-        return new CommonResult<List<LabelTagDatabaseInfo>>().success().data(result).message("获取标签库列表成功");
+        return new CommonResult<List<LabelTagDatabaseInfo>>().success().data(result).message("获取标签库列表并连接成功");
     }
 
 
     @Log("获取标签库连接")
     @GetMapping("/getConnect")
-    public CommonResult<String> getConnect(String ip) {
-        String dbPath = databasePath + "/" + ip + ".db";
+    public CommonResult<String> getConnect() {
+        String ip = HttpUtils.getClientIp(request);
+        String dbPath = driverPath + "/" + ip + ".db";
         SQLiteUtils.getSQLiteConnection(dbPath);
         return new CommonResult<String>().success().data(ip).message("获取标签库连接成功");
     }
@@ -69,8 +71,8 @@ public class LabelTagController {
     @Log("增加一级标签")
     @PostMapping("/addLabelTagParent")
     public CommonResult<Boolean> addLParentTag(@RequestBody LabelTagParent tagParent) {
-        boolean insert = parentService.insert(tagParent);
-        if (insert) {
+        int insert = parentService.insert(tagParent);
+        if (insert != -1) {
             return new CommonResult<Boolean>().success().message("增加一级标签成功");
         }
         return new CommonResult<Boolean>().success().message("增加一级标签失败");
@@ -78,13 +80,13 @@ public class LabelTagController {
 
 
     /**
-     * { "parent_id": 1, "tag_name": "巡洋舰", "properties_name":"巡洋舰" , "properties_color": "rgb(255,255,255)" }
+     * { "parent_id": 1, "tag_name": "巡洋舰", "parenttag_name": "舰船", "properties_name":"巡洋舰" , "properties_color": "rgb(255,255,255)" }
      */
     @Log("增加二级标签")
     @PostMapping("/addLabelTagChildren")
     public CommonResult<Boolean> addChildrenTag(@RequestBody LabelTagChildren tagChildren) {
-        boolean insert = childrenService.insert(tagChildren);
-        if (insert) {
+        int insert = childrenService.insert(tagChildren);
+        if (insert != -1) {
             return new CommonResult<Boolean>().success().message("增加二级标签成功");
         }
         return new CommonResult<Boolean>().success().message("增加二级标签失败");
@@ -143,6 +145,26 @@ public class LabelTagController {
             return new CommonResult<Boolean>().success().message("执行SQL成功");
         }
         return new CommonResult<Boolean>().success().message("执行SQL失败");
+    }
+
+
+    @Log("导入标签库")
+    @PostMapping("/importLabelTag")
+    public CommonResult<Boolean> importLabelTag(MultipartFile file) {
+        boolean result = parentService.importLabelTag(file);
+        if (result) {
+            return new CommonResult<Boolean>().success().message("导入标签库成功");
+        }
+        return new CommonResult<Boolean>().success().message("导入标签库失败");
+    }
+
+
+    @Log("导出标签库")
+    @GetMapping("/exportLabelTag")
+    public CommonResult<String> exportLabelTag() {
+        String clientIp = HttpUtils.getClientIp(request);
+        String result = parentService.exportLabelTag(clientIp);
+        return new CommonResult<String>().success().data(result).message("导出标签库成功");
     }
 
 }

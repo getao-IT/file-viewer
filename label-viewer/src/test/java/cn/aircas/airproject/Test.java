@@ -2,10 +2,7 @@ package cn.aircas.airproject;
 
 import cn.aircas.airproject.FileProcessApplication;
 import cn.aircas.airproject.callback.impl.GrayConverCallbackImpl;
-import cn.aircas.airproject.entity.domain.LabelTagChildren;
-import cn.aircas.airproject.entity.domain.LabelTagParent;
-import cn.aircas.airproject.entity.domain.ProgressContr;
-import cn.aircas.airproject.entity.domain.SaveLabelRequest;
+import cn.aircas.airproject.entity.domain.*;
 import cn.aircas.airproject.entity.dto.ProgressContrDto;
 import cn.aircas.airproject.entity.emun.LabelPointType;
 import cn.aircas.airproject.entity.emun.TaskStatus;
@@ -18,6 +15,9 @@ import cn.aircas.airproject.utils.ImageUtil;
 import cn.aircas.airproject.utils.OpenCV;
 import cn.aircas.airproject.utils.SQLiteUtils;
 import com.alibaba.fastjson.JSONObject;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sun.xml.internal.messaging.saaj.util.ByteInputStream;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.http.client.utils.DateUtils;
 import org.junit.runner.RunWith;
@@ -25,8 +25,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.lang.reflect.Field;
 import java.sql.SQLException;
 import java.text.ParseException;
@@ -60,7 +59,7 @@ public class Test {
                 "\ttag_name TEXT NOT NULL,\n" +
                 "\ttag_childrens TEXT NOT NULL\n" +
                 ");";
-        SQLiteUtils.executeSql(sql);
+        SQLiteUtils.executeSql(sql, null);
 
         // 释放连接
         SQLiteUtils.deSQLiteConnection();
@@ -76,7 +75,7 @@ public class Test {
         parent.setId(5);
         parent.setTag_name("飞机");
         parent.setTag_childrens("4,5,6");
-        SQLiteUtils.insert(parent, "tb_label_tag_info");
+        SQLiteUtils.insert(parent, "tb_label_tag_info", null);
 
         // 释放连接
         SQLiteUtils.deSQLiteConnection();
@@ -94,7 +93,7 @@ public class Test {
         children.setProperties_name("巡洋舰");
 
         // 查询数据
-        List<Object> tb_label_tag_info = SQLiteUtils.queryList(LabelTagChildren.class, "tb_label_tag_children_info", children);
+        List<Object> tb_label_tag_info = SQLiteUtils.queryList(LabelTagChildren.class, "tb_label_tag_children_info", children, null);
         for (Object o : tb_label_tag_info) {
             System.out.println("=======================第"+tb_label_tag_info.indexOf(o)+"个数据");
             Class<?> aClass = o.getClass();
@@ -119,7 +118,7 @@ public class Test {
         updateParent.setId(5);
         updateParent.setTag_name("舰船");
         updateParent.setTag_childrens("7,8,9");
-        SQLiteUtils.updateById(updateParent, "tb_label_tag_info");
+        SQLiteUtils.updateById(updateParent, "tb_label_tag_info", null);
 
         // 释放连接
         SQLiteUtils.deSQLiteConnection();
@@ -131,7 +130,7 @@ public class Test {
         SQLiteUtils.getSQLiteConnection("jdbc:sqlite:dbs/tb_label_tag.db");
 
         // 删除数据
-        SQLiteUtils.deleteById("tb_label_tag_parent_info", -1);
+        SQLiteUtils.deleteById("tb_label_tag_parent_info", -1, null);
 
         // 释放连接
         SQLiteUtils.deSQLiteConnection();
@@ -214,12 +213,56 @@ public class Test {
         System.out.print("创建传输任务成功：" + progress);
         ImageUtil.grayConver(file, new GrayConverCallbackImpl(progress));
     }
+
     @org.junit.Test
     public void testDate() throws ParseException {
 //        String filePath = "C:\\Users\\Administrator\\Desktop\\temp\\456.jpg";
 //        ImageUtil.grayConver(filePath);
         SaveLabelRequest saveLabelRequest = new SaveLabelRequest();
         System.out.println(JSONObject.toJSON(saveLabelRequest).toString());
+    }
+
+    @org.junit.Test
+    public void testWriteFile() throws ParseException, IOException {
+        ImageInfo imageInfo = new ImageInfo();
+        imageInfo.setSize("sdfsdfsdfsdf");
+        String result = new ObjectMapper().writeValueAsString(imageInfo);
+        String filePath = "C:\\Users\\Administrator\\Desktop\\temp\\test.json";
+
+        byte[] bytes = result.getBytes("UTF-8");
+        FileOutputStream fileOutputStream = new FileOutputStream(filePath);
+        fileOutputStream.write(bytes);
+        /*ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        outputStream.writeTo(fileOutputStream);*/
+        System.out.println("输出完成");
+    }
+
+    @org.junit.Test
+    public void testLabelTag() throws ParseException, IOException {
+        String labelJson = " {\n" +
+                "            \"id\": 1,\n" +
+                "            \"tag_name\": \"舰船\",\n" +
+                "            \"tag_childrens\": \"null\",\n" +
+                "            \"tagChildrenValues\": [\n" +
+                "                {\n" +
+                "                    \"id\": 1,\n" +
+                "                    \"parent_id\": 1,\n" +
+                "                    \"tag_name\": \"巡洋舰150\",\n" +
+                "                    \"properties_name\": \"巡洋舰150\",\n" +
+                "                    \"properties_color\": \"rgb(255,255,255)\"\n" +
+                "                },\n" +
+                "                {\n" +
+                "                    \"id\": 2,\n" +
+                "                    \"parent_id\": 1,\n" +
+                "                    \"tag_name\": \"驱逐舰\",\n" +
+                "                    \"properties_name\": \"驱逐舰\",\n" +
+                "                    \"properties_color\": \"rgb(200,255,255)\"\n" +
+                "                }\n" +
+                "            ]\n" +
+                "        }";
+        JSONObject jsonObject = JSONObject.parseObject(labelJson);
+        LabelTagParent labelTagParent = jsonObject.toJavaObject(LabelTagParent.class);
+        System.out.println(labelTagParent.toString());
     }
 }
 

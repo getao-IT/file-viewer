@@ -103,7 +103,17 @@
         <dependency>
             <groupId>cn.aircas</groupId>
             <artifactId>aircasUtils</artifactId>
-            <version>1.2.3</version>
+            <version>1.2.5</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>net.lingala.zip4j</groupId>
+                    <artifactId>zip4j</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.tukaani</groupId>
+                    <artifactId>xz</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>net.sf.json-lib</groupId>

@@ -5,6 +5,8 @@ import cn.aircas.airproject.service.LabelTagService;
 import cn.aircas.airproject.utils.SQLiteUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import javax.servlet.http.HttpServletRequest;
 import java.sql.SQLException;
 import java.util.List;
 
@@ -13,11 +15,14 @@ import java.util.List;
 @Service("LabelTagChildren-SERVICE")
 public class LabelTagChildrenServiceImpl implements LabelTagService<LabelTagChildren> {
 
+    @Autowired
+    private HttpServletRequest request;
+
 
     @Override
     public boolean executeSql(String createSql) {
         try {
-            SQLiteUtils.executeSql(createSql);
+            SQLiteUtils.executeSql(createSql, request);
             return true;
         } catch (SQLException throwables) {
             throwables.printStackTrace();
@@ -27,21 +32,20 @@ public class LabelTagChildrenServiceImpl implements LabelTagService<LabelTagChil
 
 
     @Override
-    public boolean insert(LabelTagChildren tagChildren) {
+    public int insert(LabelTagChildren tagChildren) {
         try {
-            SQLiteUtils.insert(tagChildren, SQLiteUtils.childrenTabelName);
-            return true;
+            return SQLiteUtils.insert(tagChildren, SQLiteUtils.childrenTabelName, request);
         } catch (SQLException throwables) {
             throwables.printStackTrace();
         }
-        return false;
+        return -1;
     }
 
 
     @Override
     public List<Object> queryList(Class clazz, Object params) {
         try {
-            List<Object> queryList = SQLiteUtils.queryList(clazz, SQLiteUtils.childrenTabelName, params);
+            List<Object> queryList = SQLiteUtils.queryList(clazz, SQLiteUtils.childrenTabelName, params, request);
             if (queryList != null && queryList.size() != 0) {
                 return queryList;
             }
@@ -55,7 +59,7 @@ public class LabelTagChildrenServiceImpl implements LabelTagService<LabelTagChil
     @Override
     public boolean updateById(LabelTagChildren tagChildren) {
         try {
-            SQLiteUtils.updateById(tagChildren, SQLiteUtils.childrenTabelName);
+            SQLiteUtils.updateById(tagChildren, SQLiteUtils.childrenTabelName, request);
             return true;
         } catch (SQLException throwables) {
             throwables.printStackTrace();
@@ -67,7 +71,7 @@ public class LabelTagChildrenServiceImpl implements LabelTagService<LabelTagChil
     @Override
     public boolean deleteById(int deleteId) {
         try {
-            SQLiteUtils.deleteById(SQLiteUtils.childrenTabelName, deleteId);
+            SQLiteUtils.deleteById(SQLiteUtils.childrenTabelName, deleteId, request);
             return true;
         } catch (SQLException throwables) {
             throwables.printStackTrace();

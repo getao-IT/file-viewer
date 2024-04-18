@@ -17,13 +17,7 @@ import cn.aircas.utils.image.ImageInfo;
 import cn.aircas.utils.image.ParseImageInfo;
 import cn.aircas.utils.image.geo.GeoUtils;
 import cn.aircas.utils.image.slice.CreateThumbnail;
-import cn.aircas.utils.image.slice.SliceGenerateUtil;
-import com.alibaba.fastjson.JSONArray;
-import com.alibaba.fastjson.JSONObject;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import cn.aircas.utils.image.slice.SliceUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -32,11 +26,8 @@ import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Polygon;
 import org.locationtech.jts.geom.PrecisionModel;
 import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.util.Assert;
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -47,8 +38,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 
 
@@ -190,7 +179,8 @@ public class ImageFileServiceImpl implements FileTypeService {
                         return;
                     }
                 }
-                SliceGenerateUtil.generateSlice(range, filePath, sliceInsertPath, true);
+                //SliceGenerateUtil.generateSlice(range, filePath, sliceInsertPath, true);
+                SliceUtil.sliceByRange(range, filePath, sliceInsertPath);
                 slicePathList.add(sliceInsertPath);
                 currentHeight = nextHeight;
                 // 切片入库
@@ -239,9 +229,7 @@ public class ImageFileServiceImpl implements FileTypeService {
         double minY = slice.getMinLat();
         double maxX = slice.getMinLon() + slice.getWidth();
         double maxY = slice.getMinLat() + slice.getHeight();
-        String extend = file.getName().substring(file.getName().lastIndexOf("."));
-        String sliceInsertPath = FileUtils.getStringPath(this.rootPath, slice.getSliceInsertPath()) + extend;
-        //sliceInsertPath = "C:\\Users\\dell\\Desktop\\image\\3-slice1.tiff";
+        String sliceInsertPath = FileUtils.getStringPath(this.rootPath, slice.getSliceInsertPath());
         double[] range = new double[]{minX, minY, maxX, maxY};
 
         // 是否生成XML
@@ -267,7 +255,8 @@ public class ImageFileServiceImpl implements FileTypeService {
         }
 
         // 生成切片
-        SliceGenerateUtil.generateSlice(range, filePath, sliceInsertPath, true);
+        //SliceGenerateUtil.generateSlice(range, filePath, sliceInsertPath, true);
+        SliceUtil.sliceByRange(range, filePath, sliceInsertPath);
 
         // 切片入库
         /*if (storage) {

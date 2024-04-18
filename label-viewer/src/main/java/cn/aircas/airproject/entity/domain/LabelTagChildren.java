@@ -19,6 +19,8 @@ public class LabelTagChildren {
 
     private String tag_name;
 
+    private String parenttag_name;
+
     private String properties_name;
 
     private String properties_color;
