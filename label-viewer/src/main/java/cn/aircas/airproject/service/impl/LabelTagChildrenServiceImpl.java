@@ -2,8 +2,10 @@ package cn.aircas.airproject.service.impl;
 
 import cn.aircas.airproject.entity.domain.LabelTagChildren;
 import cn.aircas.airproject.service.LabelTagService;
+import cn.aircas.airproject.utils.HttpUtils;
 import cn.aircas.airproject.utils.SQLiteUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.servlet.http.HttpServletRequest;
@@ -14,6 +16,13 @@ import java.util.List;
 
 @Service("LabelTagChildren-SERVICE")
 public class LabelTagChildrenServiceImpl implements LabelTagService<LabelTagChildren> {
+
+    private String clientIp;
+
+    private String driverUrl;
+
+    @Value(value = "${database.driverPath}")
+    private String driverPath;
 
     @Autowired
     private HttpServletRequest request;
@@ -34,6 +43,7 @@ public class LabelTagChildrenServiceImpl implements LabelTagService<LabelTagChil
     @Override
     public int insert(LabelTagChildren tagChildren) {
         try {
+            SQLiteUtils.getSQLiteConnection(clientIp, driverUrl);
             return SQLiteUtils.insert(tagChildren, SQLiteUtils.childrenTabelName, request);
         } catch (SQLException throwables) {
             throwables.printStackTrace();
@@ -59,6 +69,7 @@ public class LabelTagChildrenServiceImpl implements LabelTagService<LabelTagChil
     @Override
     public boolean updateById(LabelTagChildren tagChildren) {
         try {
+            SQLiteUtils.getSQLiteConnection(clientIp, driverUrl);
             SQLiteUtils.updateById(tagChildren, SQLiteUtils.childrenTabelName, request);
             return true;
         } catch (SQLException throwables) {
@@ -71,6 +82,7 @@ public class LabelTagChildrenServiceImpl implements LabelTagService<LabelTagChil
     @Override
     public boolean deleteById(int deleteId) {
         try {
+            SQLiteUtils.getSQLiteConnection(clientIp, driverUrl);
             SQLiteUtils.deleteById(SQLiteUtils.childrenTabelName, deleteId, request);
             return true;
         } catch (SQLException throwables) {
@@ -79,6 +91,12 @@ public class LabelTagChildrenServiceImpl implements LabelTagService<LabelTagChil
         return false;
     }
 
+
+    @Override
+    public void setIpAndDriver() {
+        this.clientIp = HttpUtils.getClientIp(request);
+        this.driverUrl = driverPath + "/" + clientIp + ".db";
+    }
 
 
     /*@Override

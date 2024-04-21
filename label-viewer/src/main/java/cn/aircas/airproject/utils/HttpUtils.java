@@ -2,7 +2,10 @@ package cn.aircas.airproject.utils;
 
 import javax.servlet.http.HttpServletRequest;
 import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.util.Enumeration;
 
 
 /**
@@ -12,7 +15,7 @@ public class HttpUtils {
 
 
     /**
-     * 获取客户端IP
+     * 通过request，获取客户端IP
      * @param request
      * @return
      */
@@ -57,4 +60,30 @@ public class HttpUtils {
         }
         return ip;
     }
+
+
+    /**
+     * 通过NetworkInterface，获取客户端IP
+     * @return
+     */
+    public static String getClientIpFromNetwork() {
+        String ip = null;
+
+        try {
+            Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+            while (interfaces.hasMoreElements()) {
+                NetworkInterface network = interfaces.nextElement();
+
+                // OpenVPN TAP-Windows6
+                if (network.getDisplayName().equalsIgnoreCase("TAP-Windows Adapter V9")) {
+                    ip = network.getInetAddresses().nextElement().getHostAddress();
+                }
+            }
+        } catch (SocketException e) {
+            e.printStackTrace();
+        }
+
+        return ip;
+    }
+
 }

@@ -18,6 +18,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.xml.internal.messaging.saaj.util.ByteInputStream;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.http.client.utils.DateUtils;
 import org.junit.runner.RunWith;
@@ -27,11 +28,14 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.*;
 import java.lang.reflect.Field;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
+@Slf4j
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = FileProcessApplication.class)
 public class Test {
@@ -45,10 +49,48 @@ public class Test {
     @Autowired
     private SQLiteUtils sqLiteUtils;
 
+
+    @org.junit.Test
+    public void testGetVpnIp() {
+        try {
+            Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+            while (interfaces.hasMoreElements()) {
+                NetworkInterface networkInterface = interfaces.nextElement();
+
+                // name:net4 (TAP-Windows Adapter V9)
+                /*if (networkInterface.getDisplayName().contains("VPN") || networkInterface.getDisplayName().contains("Open")) {
+                    System.out.println("找到了一个VPN接口，名称 - "+networkInterface.getDisplayName()+"，addr - " + networkInterface.getInetAddresses());
+                }*/
+
+                if (networkInterface.getDisplayName().equalsIgnoreCase("TAP-Windows Adapter V9")) {
+                    InetAddress inetAddress = networkInterface.getInetAddresses().nextElement();
+                    String clientIp = inetAddress.getHostAddress();
+                    System.out.println("找到了OPEN VPN接口，名称 - "+networkInterface.getDisplayName()+"，addr - " + networkInterface.getInetAddresses());
+                }
+
+                if (networkInterface.isLoopback() || !networkInterface.isUp()) {
+                    continue; // 跳过回环接口和非激活状态的接口
+                }
+
+                /*if (networkInterface.isVirtual()) { // 检查是否为虚拟接口，即VPN接口
+                    System.out.println("Interface: " + networkInterface.getDisplayName());
+                    Enumeration<InetAddress> addresses = networkInterface.getInetAddresses();
+                    while (addresses.hasMoreElements()) {
+                        InetAddress inetAddress = addresses.nextElement();
+                        System.out.println("IP Address: " + inetAddress.getHostAddress());
+                    }
+                }*/
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
     @org.junit.Test
     public void createTable() throws SQLException, IllegalAccessException {
         // 获取连接
-        SQLiteUtils.getSQLiteConnection("jdbc:sqlite:dbs/tb_label_tag.db");
+        SQLiteUtils.getSQLiteConnection(null, "jdbc:sqlite:dbs/tb_label_tag.db");
 
         // 创建数据库
         /*String sql = "CREATE TABLE tb_gt_test (\n" +
@@ -68,7 +110,7 @@ public class Test {
     @org.junit.Test
     public void insert() throws SQLException, IllegalAccessException {
         // 获取连接
-        SQLiteUtils.getSQLiteConnection("jdbc:sqlite:dbs/tb_label_tag.db");
+        SQLiteUtils.getSQLiteConnection(null, "jdbc:sqlite:dbs/tb_label_tag.db");
 
         // 插入数据
         LabelTagParent parent = new LabelTagParent();
@@ -84,7 +126,7 @@ public class Test {
     @org.junit.Test
     public void query() throws SQLException, IllegalAccessException {
         // 获取连接
-        SQLiteUtils.getSQLiteConnection("jdbc:sqlite:dbs/default.db");
+        SQLiteUtils.getSQLiteConnection(null, "jdbc:sqlite:dbs/default.db");
 
         LabelTagParent labelTagParent = new LabelTagParent();
         labelTagParent.setTag_name("飞机");
@@ -111,7 +153,7 @@ public class Test {
     @org.junit.Test
     public void update() throws SQLException, IllegalAccessException {
         // 获取连接
-        SQLiteUtils.getSQLiteConnection("jdbc:sqlite:dbs/tb_label_tag.db");
+        SQLiteUtils.getSQLiteConnection(null, "jdbc:sqlite:dbs/tb_label_tag.db");
 
         // 更新数据
         LabelTagParent updateParent = new LabelTagParent();
@@ -127,7 +169,7 @@ public class Test {
     @org.junit.Test
     public void delete() throws SQLException, IllegalAccessException {
         // 获取连接
-        SQLiteUtils.getSQLiteConnection("jdbc:sqlite:dbs/tb_label_tag.db");
+        SQLiteUtils.getSQLiteConnection(null, "jdbc:sqlite:dbs/tb_label_tag.db");
 
         // 删除数据
         SQLiteUtils.deleteById("tb_label_tag_parent_info", -1, null);

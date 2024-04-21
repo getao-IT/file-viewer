@@ -52,7 +52,7 @@ public class LabelTagController {
     public CommonResult<String> getConnect() {
         String ip = HttpUtils.getClientIp(request);
         String dbPath = driverPath + "/" + ip + ".db";
-        SQLiteUtils.getSQLiteConnection(dbPath);
+        SQLiteUtils.getSQLiteConnection(ip, dbPath);
         return new CommonResult<String>().success().data(ip).message("获取标签库连接成功");
     }
 
@@ -60,6 +60,7 @@ public class LabelTagController {
     @Log("获取标签库信息")
     @GetMapping("/listLabelTag")
     public CommonResult<List<LabelTagDto>> listLabelTag() {
+        parentService.setIpAndDriver();
         List<LabelTagDto> result = parentService.listLabelTag();
         return new CommonResult<List<LabelTagDto>>().success().data(result).message("获取标签库成功");
     }
@@ -71,6 +72,7 @@ public class LabelTagController {
     @Log("增加一级标签")
     @PostMapping("/addLabelTagParent")
     public CommonResult<Boolean> addLParentTag(@RequestBody LabelTagParent tagParent) {
+        parentService.setIpAndDriver();
         int insert = parentService.insert(tagParent);
         if (insert != -1) {
             return new CommonResult<Boolean>().success().message("增加一级标签成功");
@@ -85,6 +87,7 @@ public class LabelTagController {
     @Log("增加二级标签")
     @PostMapping("/addLabelTagChildren")
     public CommonResult<Boolean> addChildrenTag(@RequestBody LabelTagChildren tagChildren) {
+        childrenService.setIpAndDriver();
         int insert = childrenService.insert(tagChildren);
         if (insert != -1) {
             return new CommonResult<Boolean>().success().message("增加二级标签成功");
@@ -96,6 +99,7 @@ public class LabelTagController {
     @Log("更新一级标签")
     @PutMapping("/updateLabelTagParent")
     public CommonResult<Boolean> updateLabelTagParent(@RequestBody LabelTagParent tagParent) {
+        parentService.setIpAndDriver();
         boolean insert = parentService.updateById(tagParent);
         if (insert) {
             return new CommonResult<Boolean>().success().message("更新一级标签成功");
@@ -107,6 +111,7 @@ public class LabelTagController {
     @Log("更新二级标签")
     @PutMapping("/updateLabelTagChildren")
     public CommonResult<Boolean> updateChildrenTag(@RequestBody LabelTagChildren tagChildren) {
+        childrenService.setIpAndDriver();
         boolean insert = childrenService.updateById(tagChildren);
         if (insert) {
             return new CommonResult<Boolean>().success().message("更新二级标签成功");
@@ -118,6 +123,7 @@ public class LabelTagController {
     @Log("删除一级标签")
     @DeleteMapping("/deleteLabelTagParent")
     public CommonResult<Boolean> deleteLabelTagParent(int id) {
+        parentService.setIpAndDriver();
         boolean insert = parentService.deleteById(id);
         if (insert) {
             return new CommonResult<Boolean>().success().message("删除一级标签成功");
@@ -129,6 +135,7 @@ public class LabelTagController {
     @Log("删除二级标签")
     @DeleteMapping("/deleteLabelTagChildren")
     public CommonResult<Boolean> deleteChildrenTag(int id) {
+        childrenService.setIpAndDriver();
         boolean insert = childrenService.deleteById(id);
         if (insert) {
             return new CommonResult<Boolean>().success().message("删除二级标签成功");
@@ -140,6 +147,7 @@ public class LabelTagController {
     @Log("执行SQL")
     @PostMapping("/executeSql")
     public CommonResult<Boolean> executeSql(String sql) {
+        parentService.setIpAndDriver();
         boolean create = parentService.executeSql(sql);
         if (create) {
             return new CommonResult<Boolean>().success().message("执行SQL成功");
@@ -151,6 +159,7 @@ public class LabelTagController {
     @Log("导入标签库")
     @PostMapping("/importLabelTag")
     public CommonResult<Boolean> importLabelTag(MultipartFile file) {
+        parentService.setIpAndDriver();
         boolean result = parentService.importLabelTag(file);
         if (result) {
             return new CommonResult<Boolean>().success().message("导入标签库成功");
@@ -162,8 +171,8 @@ public class LabelTagController {
     @Log("导出标签库")
     @GetMapping("/exportLabelTag")
     public CommonResult<String> exportLabelTag() {
-        String clientIp = HttpUtils.getClientIp(request);
-        String result = parentService.exportLabelTag(clientIp);
+        parentService.setIpAndDriver();
+        String result = parentService.exportLabelTag();
         return new CommonResult<String>().success().data(result).message("导出标签库成功");
     }
 

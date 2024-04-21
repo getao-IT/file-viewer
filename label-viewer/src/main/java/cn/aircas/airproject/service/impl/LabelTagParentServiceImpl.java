@@ -13,14 +13,18 @@ import cn.aircas.airproject.utils.*;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.baomidou.mybatisplus.core.toolkit.sql.SqlUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.jdbc.object.SqlUpdate;
 import org.springframework.stereotype.Service;
+import org.springframework.test.context.jdbc.Sql;
 import org.springframework.web.multipart.MultipartFile;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
@@ -30,13 +34,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-
 @Slf4j
 @Service("LabelTagParent-SERVICE")
 public class LabelTagParentServiceImpl implements LabelTagService<LabelTagParent> {
 
+    private String clientIp;
+
+    private String driverUrl;
+
     @Value(value = "${sys.rootPath}")
     private String rootPath;
+
+    @Value(value = "${database.driverPath}")
+    private String driverPath;
 
     @Autowired
     private HttpServletRequest request;
@@ -51,6 +61,7 @@ public class LabelTagParentServiceImpl implements LabelTagService<LabelTagParent
     @Override
     public boolean executeSql(String createSql) {
         try {
+            SQLiteUtils.getSQLiteConnection(clientIp, driverUrl);
             SQLiteUtils.executeSql(createSql, request);
             return true;
         } catch (SQLException throwables) {
@@ -63,6 +74,7 @@ public class LabelTagParentServiceImpl implements LabelTagService<LabelTagParent
     @Override
     public int insert(LabelTagParent tagParent) {
         try {
+            SQLiteUtils.getSQLiteConnection(clientIp, driverUrl);
             return SQLiteUtils.insert(tagParent, SQLiteUtils.parentTabelName, request);
         } catch (SQLException throwables) {
             throwables.printStackTrace();
@@ -88,6 +100,7 @@ public class LabelTagParentServiceImpl implements LabelTagService<LabelTagParent
     @Override
     public boolean updateById(LabelTagParent tagParent) {
         try {
+            SQLiteUtils.getSQLiteConnection(clientIp, driverUrl);
             SQLiteUtils.updateById(tagParent, SQLiteUtils.parentTabelName, request);
             return true;
         } catch (SQLException throwables) {
@@ -100,6 +113,7 @@ public class LabelTagParentServiceImpl implements LabelTagService<LabelTagParent
     @Override
     public boolean deleteById(int deleteId) {
         try {
+            SQLiteUtils.getSQLiteConnection(clientIp, driverUrl);
             SQLiteUtils.deleteById(SQLiteUtils.parentTabelName, deleteId, request);
             LabelTagChildren children = new LabelTagChildren();
             children.setParent_id(deleteId);
@@ -121,6 +135,15 @@ public class LabelTagParentServiceImpl implements LabelTagService<LabelTagParent
     public List<LabelTagDto> listLabelTag() {
         List<LabelTagDto> result = new ArrayList<>();
         try {
+            String dbsPath = FileUtils.getStringPath(System.getProperty("user.dir"), "dbs");
+            String clientDbPath = FileUtils.getStringPath(dbsPath, clientIp) + ".db";
+            File clientDb = new File(clientDbPath);
+            if (!clientDb.exists()) {
+                String sqlPath = FileUtils.getStringPath(dbsPath, "create_table.sql");
+                SQLiteUtils.executeSqlFile(clientIp, driverUrl, sqlPath);
+            } else {
+                SQLiteUtils.getSQLiteConnection(clientIp, driverUrl);
+            }
             List<Object> tagParents = SQLiteUtils.queryList(LabelTagParent.class, SQLiteUtils.parentTabelName, null, request);
             for (Object tagParent : tagParents) {
                 LabelTagParent tagp = (LabelTagParent) tagParent;
@@ -141,31 +164,31 @@ public class LabelTagParentServiceImpl implements LabelTagService<LabelTagParent
 
     /**
      * 导入标签库
+     *
      * @param file
      * @return
      */
     public boolean importLabelTag(MultipartFile file) {
         try {
-            if (SQLiteUtils.conn == null) {
-                String dbsPath = FileUtils.getStringPath(System.getProperty("user.dir"), "dbs");
-                String clientIp = HttpUtils.getClientIp(request);
-                String clientDbPath = FileUtils.getStringPath(dbsPath, clientIp) + ".db";
-                File clientDb = new File(clientDbPath);
-                String clientUrl = SQLiteUtils.driverPath + "/" +clientIp + ".db";
-                if (!clientDb.exists()) {
-                    String sqlPath = FileUtils.getStringPath(dbsPath, "create_table.sql");
-                    SQLiteUtils.executeSqlFile(clientUrl, sqlPath);
-                } else {
-                    SQLiteUtils.getSQLiteConnection(clientUrl);
-                }
+            String dbsPath = FileUtils.getStringPath(System.getProperty("user.dir"), "dbs");
+            String clientIp = HttpUtils.getClientIp(request);
+            String clientDbPath = FileUtils.getStringPath(dbsPath, clientIp) + ".db";
+            File clientDb = new File(clientDbPath);
+            String clientUrl = SQLiteUtils.driverPath + "/" + clientIp + ".db";
+            if (!clientDb.exists()) {
+                String sqlPath = FileUtils.getStringPath(dbsPath, "create_table.sql");
+                SQLiteUtils.executeSqlFile(clientIp, clientUrl, sqlPath);
+            } else {
+                SQLiteUtils.getSQLiteConnection(clientIp, clientUrl);
             }
+
             byte[] bytes = file.getBytes();
             String content = new String(bytes, "UTF-8");
             if (content == null || content == "" || content.length() == 0) {
                 log.error("导入的文件数据为空字节：{}", file.getName());
                 return false;
             }
-            JSONObject labelTagJson = JSONObject.parseObject(content.substring(1, content.length()-1));
+            JSONObject labelTagJson = JSONObject.parseObject(content.substring(1, content.length() - 1));
 
             tagJsonToSqllite(labelTagJson);
             return true;
@@ -180,6 +203,7 @@ public class LabelTagParentServiceImpl implements LabelTagService<LabelTagParent
 
     /**
      * 将tagJson内容入库，此操作会清空标签库现有数据，谨慎操作
+     *
      * @param labelTagJson
      */
     private void tagJsonToSqllite(JSONObject labelTagJson) {
@@ -215,9 +239,9 @@ public class LabelTagParentServiceImpl implements LabelTagService<LabelTagParent
 
     /**
      * 将tagJson内容入库，此操作会清空标签库现有数据，谨慎操作
-     * @param clientIp
      */
-    public String exportLabelTag(String clientIp) {
+    public String exportLabelTag() {
+        SQLiteUtils.getSQLiteConnection(clientIp, driverUrl);
         JSONObject result = new JSONObject();
         JSONArray data = new JSONArray();
         List<Object> objects = this.queryList(LabelTagParent.class, null);
@@ -268,6 +292,13 @@ public class LabelTagParentServiceImpl implements LabelTagService<LabelTagParent
             }
         }
         return result.toString();
+    }
+
+
+    @Override
+    public void setIpAndDriver() {
+        this.clientIp = HttpUtils.getClientIp(request);
+        this.driverUrl = driverPath + "/" + clientIp + ".db";
     }
 
 }

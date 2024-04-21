@@ -71,11 +71,17 @@ public class SQLiteUtils {
      *
      * @param driverPath
      */
-    public static void getSQLiteConnection(String driverPath) {
+    public static void getSQLiteConnection(String clientIp, String driverPath) {
         try {
-            Class.forName("org.sqlite.JDBC");
-            conn = DriverManager.getConnection(driverPath);
+            if (connPools.containsKey(clientIp)) {
+                conn = connPools.get(clientIp);
+            } else {
+                Class.forName("org.sqlite.JDBC");
+                conn = DriverManager.getConnection(driverPath);
+                connPools.put(clientIp, conn);
+            }
             ptmt = conn.createStatement();
+
             log.info("Getting the SQLite connection succeeded: {}", driverPath);
         } catch (ClassNotFoundException | SQLException e) {
             e.printStackTrace();
@@ -110,7 +116,6 @@ public class SQLiteUtils {
      */
     public static void executeSql(String createSql, HttpServletRequest request) throws SQLException {
         try {
-            getClientConn(request);
             conn.setAutoCommit(false);
             ptmt.execute(createSql);
             conn.commit();
@@ -119,8 +124,6 @@ public class SQLiteUtils {
             conn.rollback();
             e.printStackTrace();
             throw new RuntimeException(e);
-        } finally {
-            deSQLiteConnection();
         }
     }
 
@@ -131,9 +134,9 @@ public class SQLiteUtils {
      * @param sqlPath
      * @throws SQLException
      */
-    public static void executeSqlFile(String clientUrl, String sqlPath) throws SQLException {
+    public static void executeSqlFile(String clientIp, String clientUrl, String sqlPath) throws SQLException {
         try {
-            SQLiteUtils.getSQLiteConnection(clientUrl);
+            SQLiteUtils.getSQLiteConnection(clientIp, clientUrl);
             ScriptRunner run = new ScriptRunner(conn);
             run.setEscapeProcessing(false);
             run.setSendFullScript(false);
@@ -168,9 +171,9 @@ public class SQLiteUtils {
             String clientUrl = driverPath + "/" + clientIp + ".db";
             if (!clientDb.exists()) {
                 String sqlPath = FileUtils.getStringPath(dbsPath, "create_table.sql");
-                executeSqlFile(clientUrl, sqlPath);
+                executeSqlFile(clientIp, clientUrl, sqlPath);
             } else {
-                getSQLiteConnection(clientUrl);
+                getSQLiteConnection(clientIp, clientUrl);
             }
             long createTime = Files.readAttributes(Paths.get(clientDb.getPath()), BasicFileAttributes.class).creationTime().toMillis();
             LabelTagDatabaseInfo dbInfo = LabelTagDatabaseInfo.builder().ip(clientIp).name(clientDb.getName())
@@ -179,8 +182,6 @@ public class SQLiteUtils {
         } catch (IOException | SQLException e) {
             log.error("获取标签库列表并连接失败");
             throw new RuntimeException(e);
-        } finally {
-            deSQLiteConnection();
         }
         return dbs;
     }
@@ -196,7 +197,6 @@ public class SQLiteUtils {
     public static int insert(Object object, String tableName, HttpServletRequest request) throws SQLException {
         int insertId = -1;
         try {
-            getClientConn(request);
             conn.setAutoCommit(false);
             StringBuilder insertSql = new StringBuilder("INSERT INTO " + tableName + "(");
             StringJoiner cols = new StringJoiner(",");
@@ -225,8 +225,6 @@ public class SQLiteUtils {
             conn.rollback();
             e.printStackTrace();
             throw new RuntimeException(e);
-        } finally {
-            deSQLiteConnection();
         }
         return insertId;
     }
@@ -244,7 +242,6 @@ public class SQLiteUtils {
         List<Object> result = new ArrayList();
         ResultSet rs = null;
         try {
-            getClientConn(request);
             StringBuilder querySql = new StringBuilder("SELECT * FROM " + tableName);
             Field[] fields = clazz.getDeclaredFields();
 
@@ -289,7 +286,6 @@ public class SQLiteUtils {
             if (rs != null) {
                 rs.close();
             }
-            deSQLiteConnection();
         }
         return result;
     }
@@ -307,7 +303,6 @@ public class SQLiteUtils {
         List<Object> result = new ArrayList();
         ResultSet rs = null;
         try {
-            getClientConn(request);
             StringBuilder querySql = new StringBuilder("SELECT * FROM " + tableName);
             StringJoiner queryCols = new StringJoiner(" and ");
             if (cols != null && cols.length != 0) {
@@ -338,7 +333,6 @@ public class SQLiteUtils {
             if (rs != null) {
                 rs.close();
             }
-            deSQLiteConnection();
         }
         return result;
     }
@@ -353,7 +347,6 @@ public class SQLiteUtils {
      */
     public static void updateById(Object object, String tableName, HttpServletRequest request) throws SQLException {
         try {
-            getClientConn(request);
             conn.setAutoCommit(false);
             StringBuilder updateSql = new StringBuilder("UPDATE " + tableName + " set ");
             StringJoiner updates = new StringJoiner(",");
@@ -381,8 +374,6 @@ public class SQLiteUtils {
             conn.rollback();
             e.printStackTrace();
             throw new RuntimeException(e);
-        } finally {
-            deSQLiteConnection();
         }
     }
 
@@ -396,7 +387,6 @@ public class SQLiteUtils {
      */
     public static void deleteById(String tableName, int deleteId, HttpServletRequest request) throws SQLException {
         try {
-            getClientConn(request);
             conn.setAutoCommit(false);
             String deleteSql = new String("DELETE FROM " + tableName + " WHERE id = " + deleteId + ";");
             ptmt.execute(deleteSql);
@@ -406,8 +396,6 @@ public class SQLiteUtils {
             conn.rollback();
             e.printStackTrace();
             throw new RuntimeException(e);
-        } finally {
-            deSQLiteConnection();
         }
     }
 
@@ -420,12 +408,12 @@ public class SQLiteUtils {
         if (!clientDb.exists()) {
             try {
                 String sqlPath = FileUtils.getStringPath(dbsPath, "create_table.sql");
-                executeSqlFile(clientUrl, sqlPath);
+                executeSqlFile(clientIp, clientUrl, sqlPath);
             } catch (SQLException throwables) {
                 throwables.printStackTrace();
             }
         } else {
-            getSQLiteConnection(clientUrl);
+            getSQLiteConnection(clientIp, clientUrl);
         }
     }
 }

@@ -19,4 +19,6 @@ public interface LabelTagService<T> {
 
     boolean deleteById(int deleteId);
 
+    void setIpAndDriver();
+
 }
