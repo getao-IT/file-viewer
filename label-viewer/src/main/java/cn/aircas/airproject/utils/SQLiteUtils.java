@@ -149,6 +149,16 @@ public class SQLiteUtils {
     }
 
 
+    public static void copyDatabase(String src, String dest) {
+        try {
+            FileUtils.copyFile(new File(src), new File(dest));
+        } catch (IOException e) {
+            log.error("文件复制错误：{}", e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+
     public static List<LabelTagDatabaseInfo> listLabelTagDatabase(HttpServletRequest request) {
         List<LabelTagDatabaseInfo> dbs = null;
         try {
@@ -170,16 +180,16 @@ public class SQLiteUtils {
             File clientDb = new File(clientDbPath);
             String clientUrl = driverPath + "/" + clientIp + ".db";
             if (!clientDb.exists()) {
-                String sqlPath = FileUtils.getStringPath(dbsPath, "create_table.sql");
-                executeSqlFile(clientIp, clientUrl, sqlPath);
-            } else {
-                getSQLiteConnection(clientIp, clientUrl);
+                String defaultDb = FileUtils.getStringPath(dbsPath, "default") + ".db";
+                SQLiteUtils.copyDatabase(defaultDb, clientDbPath);
             }
+            SQLiteUtils.getSQLiteConnection(clientIp, clientUrl);
+
             long createTime = Files.readAttributes(Paths.get(clientDb.getPath()), BasicFileAttributes.class).creationTime().toMillis();
             LabelTagDatabaseInfo dbInfo = LabelTagDatabaseInfo.builder().ip(clientIp).name(clientDb.getName())
                     .path(clientDbPath).createTime(new Date(createTime)).modifyTime(new Date(clientDb.lastModified())).build();
             dbs.add(dbInfo);
-        } catch (IOException | SQLException e) {
+        } catch (IOException e) {
             log.error("获取标签库列表并连接失败");
             throw new RuntimeException(e);
         }
@@ -406,14 +416,9 @@ public class SQLiteUtils {
         File clientDb = new File(clientDbPath);
         String clientUrl = driverPath + "/" + clientIp + ".db";
         if (!clientDb.exists()) {
-            try {
-                String sqlPath = FileUtils.getStringPath(dbsPath, "create_table.sql");
-                executeSqlFile(clientIp, clientUrl, sqlPath);
-            } catch (SQLException throwables) {
-                throwables.printStackTrace();
-            }
-        } else {
-            getSQLiteConnection(clientIp, clientUrl);
+            String defaultDb = FileUtils.getStringPath(dbsPath, "default") + ".db";
+            SQLiteUtils.copyDatabase(defaultDb, clientDbPath);
         }
+        SQLiteUtils.getSQLiteConnection(clientIp, clientUrl);
     }
 }

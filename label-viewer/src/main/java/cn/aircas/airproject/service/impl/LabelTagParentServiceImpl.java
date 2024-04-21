@@ -139,11 +139,11 @@ public class LabelTagParentServiceImpl implements LabelTagService<LabelTagParent
             String clientDbPath = FileUtils.getStringPath(dbsPath, clientIp) + ".db";
             File clientDb = new File(clientDbPath);
             if (!clientDb.exists()) {
-                String sqlPath = FileUtils.getStringPath(dbsPath, "create_table.sql");
-                SQLiteUtils.executeSqlFile(clientIp, driverUrl, sqlPath);
-            } else {
-                SQLiteUtils.getSQLiteConnection(clientIp, driverUrl);
+                String defaultDb = FileUtils.getStringPath(dbsPath, "default") + ".db";
+                SQLiteUtils.copyDatabase(defaultDb, clientDbPath);
             }
+            SQLiteUtils.getSQLiteConnection(clientIp, driverUrl);
+
             List<Object> tagParents = SQLiteUtils.queryList(LabelTagParent.class, SQLiteUtils.parentTabelName, null, request);
             for (Object tagParent : tagParents) {
                 LabelTagParent tagp = (LabelTagParent) tagParent;
@@ -176,11 +176,10 @@ public class LabelTagParentServiceImpl implements LabelTagService<LabelTagParent
             File clientDb = new File(clientDbPath);
             String clientUrl = SQLiteUtils.driverPath + "/" + clientIp + ".db";
             if (!clientDb.exists()) {
-                String sqlPath = FileUtils.getStringPath(dbsPath, "create_table.sql");
-                SQLiteUtils.executeSqlFile(clientIp, clientUrl, sqlPath);
-            } else {
-                SQLiteUtils.getSQLiteConnection(clientIp, clientUrl);
+                String defaultDb = FileUtils.getStringPath(dbsPath, "default") + ".db";
+                SQLiteUtils.copyDatabase(defaultDb, clientDbPath);
             }
+            SQLiteUtils.getSQLiteConnection(clientIp, clientUrl);
 
             byte[] bytes = file.getBytes();
             String content = new String(bytes, "UTF-8");
@@ -194,8 +193,6 @@ public class LabelTagParentServiceImpl implements LabelTagService<LabelTagParent
             return true;
         } catch (IOException e) {
             e.printStackTrace();
-        } catch (SQLException throwables) {
-            throwables.printStackTrace();
         }
         return false;
     }
