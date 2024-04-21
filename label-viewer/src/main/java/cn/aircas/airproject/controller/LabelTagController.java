@@ -160,6 +160,7 @@ public class LabelTagController {
     @PostMapping("/importLabelTag")
     public CommonResult<Boolean> importLabelTag(MultipartFile file) {
         parentService.setIpAndDriver();
+        childrenService.setIpAndDriver();
         boolean result = parentService.importLabelTag(file);
         if (result) {
             return new CommonResult<Boolean>().success().message("导入标签库成功");

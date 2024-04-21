@@ -187,7 +187,13 @@ public class LabelTagParentServiceImpl implements LabelTagService<LabelTagParent
                 log.error("导入的文件数据为空字节：{}", file.getName());
                 return false;
             }
-            JSONObject labelTagJson = JSONObject.parseObject(content.substring(1, content.length() - 1));
+
+            JSONObject labelTagJson = null;
+            if (content.startsWith("\"") || content.endsWith("\"")) {
+                labelTagJson = JSONObject.parseObject(content.substring(1, content.length() - 1));
+            } else {
+                labelTagJson = JSONObject.parseObject(content);
+            }
 
             tagJsonToSqllite(labelTagJson);
             return true;
