@@ -1,6 +1,5 @@
 package cn.aircas.airproject;
 
-import cn.aircas.airproject.FileProcessApplication;
 import cn.aircas.airproject.callback.impl.GrayConverCallbackImpl;
 import cn.aircas.airproject.entity.domain.*;
 import cn.aircas.airproject.entity.dto.ProgressContrDto;
@@ -15,13 +14,11 @@ import cn.aircas.airproject.utils.HttpUtils;
 import cn.aircas.airproject.utils.ImageUtil;
 import cn.aircas.airproject.utils.OpenCV;
 import cn.aircas.airproject.utils.SQLiteUtils;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sun.xml.internal.messaging.saaj.util.ByteInputStream;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.FilenameUtils;
-import org.apache.http.client.utils.DateUtils;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -54,6 +51,40 @@ public class Test {
 
     @Autowired
     private SQLiteUtils sqLiteUtils;
+
+
+    @org.junit.Test
+    public void takeColor() throws IOException {
+        String filePath = "D:\\iecas\\workspace\\file-viewer\\label-viewer\\dbs\\标签 - 副本.json";
+        File file = new File(filePath);
+        FileInputStream inputStream = new FileInputStream(file);
+        byte[] buffer = new byte[inputStream.available()];
+        inputStream.read(buffer);
+        java.lang.String content = new java.lang.String(buffer, "UTF-8");
+        JSONObject json = JSONObject.parseObject(content);
+        JSONArray tagData = json.getJSONArray("data");
+        JSONArray newtagData = new JSONArray();
+        for (Object tagDatum : tagData) {
+            JSONObject labelTag = JSONObject.parseObject(JSON.toJSONString(tagDatum));
+            JSONArray childrenValues = labelTag.getJSONArray("tagChildrenValues");
+            JSONArray newChildrenValues =  new JSONArray();
+            for (Object childrenValue : childrenValues) {
+                JSONObject childrenJson = JSONObject.parseObject(childrenValue.toString());
+                childrenJson.put("properties_color", SQLiteUtils.takeColorHex());
+                newChildrenValues.add(childrenJson);
+            }
+            labelTag.put("tagChildrenValues", newChildrenValues);
+            newtagData.add(labelTag);
+        }
+        json.put("data", newtagData);
+
+        String pringFilePath = "D:\\iecas\\workspace\\file-viewer\\label-viewer\\dbs\\标签-default.json";
+        FileOutputStream fileOutputStream = new FileOutputStream(pringFilePath);
+        int len = 0;
+        fileOutputStream.write(json.toJSONString().getBytes("UTF-8"));
+
+        System.out.println("生成标签-default.json成功");
+    }
 
 
     @org.junit.Test

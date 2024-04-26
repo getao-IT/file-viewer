@@ -8,9 +8,12 @@ import cn.aircas.airproject.entity.dto.ProgressContrDto;
 import cn.aircas.airproject.entity.emun.*;
 import cn.aircas.airproject.service.FileService;
 import cn.aircas.airproject.service.LabelProjectService;
+import cn.aircas.airproject.service.LabelTagService;
 import cn.aircas.airproject.service.ProgressService;
 import cn.aircas.airproject.utils.*;
 import cn.aircas.utils.image.geo.GeoUtils;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
@@ -41,7 +44,10 @@ public class LabelProjectServiceImpl implements LabelProjectService {
     private HttpServletResponse response;
 
     @Autowired
-    private FileService fileService;
+    private LabelTagChildrenServiceImpl childrenService;
+
+    @Autowired
+    private LabelTagParentServiceImpl parentService;
 
 
     /**
@@ -480,6 +486,40 @@ public class LabelProjectServiceImpl implements LabelProjectService {
         LabelObject labelInfo = null;
         try {
             labelInfo = XMLUtils.parseXMLFromStream(file.getInputStream(), XMLLabelObjectInfo.class);
+
+            parentService.setIpAndDriver();
+            childrenService.setIpAndDriver();
+            JSONObject jsonLabel = JSONObject.parseObject(labelInfo.toJSONObject().toJSONString());
+            JSONArray object = jsonLabel.getJSONArray("object");
+            LabelTagParent parent = new LabelTagParent();
+            parent.setTag_name("其他");
+            LabelTagParent parentInfo = (LabelTagParent) parentService.queryList(LabelTagParent.class, parent).get(0);
+            JSONArray newObject = new JSONArray();
+            for (Object o : object) {
+                JSONObject oJson = JSONObject.parseObject(o.toString());
+                JSONObject possibleresult = oJson.getJSONArray("possibleresult").getJSONObject(0);
+                String name = possibleresult.getString("name");
+                LabelTagChildren params = new LabelTagChildren();
+                params.setTag_name(name);
+                List<Object> childrens = childrenService.queryList(LabelTagChildren.class, params);
+                if (childrens == null || childrens.size() == 0) {
+                    possibleresult.put("basicname", "其他");
+                    int parentId = parentInfo.getId();
+                    LabelTagChildren children = new LabelTagChildren();
+                    children.setParent_id(parentId);
+                    children.setTag_name(possibleresult.getString("name"));
+                    children.setProperties_name(possibleresult.getString("name"));
+                    children.setParenttag_name("其他");
+                    children.setProperties_color(SQLiteUtils.takeColorHex());
+                    childrenService.insert(children);
+                } else {
+                    LabelTagChildren children = (LabelTagChildren) childrens.get(0);
+                    possibleresult.put("basicname", children.getParenttag_name());
+                }
+                newObject.add(oJson);
+            }
+            jsonLabel.put("object", newObject);
+            labelInfo = jsonLabel.toJavaObject(XMLLabelObjectInfo.class);
         } catch (IOException e) {
             e.printStackTrace();
         }

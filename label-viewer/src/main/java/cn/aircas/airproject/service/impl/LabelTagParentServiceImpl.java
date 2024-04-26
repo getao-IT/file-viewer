@@ -15,6 +15,7 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.toolkit.sql.SqlUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sun.xml.internal.messaging.saaj.util.ByteInputStream;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
 import org.springframework.beans.BeanUtils;
@@ -86,6 +87,7 @@ public class LabelTagParentServiceImpl implements LabelTagService<LabelTagParent
     @Override
     public List<Object> queryList(Class clazz, Object params) {
         try {
+            SQLiteUtils.getSQLiteConnection(clientIp, driverUrl);
             List<Object> queryList = SQLiteUtils.queryList(clazz, SQLiteUtils.parentTabelName, params, request);
             if (queryList != null && queryList.size() != 0) {
                 return queryList;
@@ -113,7 +115,6 @@ public class LabelTagParentServiceImpl implements LabelTagService<LabelTagParent
     @Override
     public boolean deleteById(int deleteId) {
         try {
-            SQLiteUtils.getSQLiteConnection(clientIp, driverUrl);
             SQLiteUtils.deleteById(SQLiteUtils.parentTabelName, deleteId, request);
             LabelTagChildren children = new LabelTagChildren();
             children.setParent_id(deleteId);
@@ -244,7 +245,6 @@ public class LabelTagParentServiceImpl implements LabelTagService<LabelTagParent
      * 将tagJson内容入库，此操作会清空标签库现有数据，谨慎操作
      */
     public String exportLabelTag() {
-        SQLiteUtils.getSQLiteConnection(clientIp, driverUrl);
         JSONObject result = new JSONObject();
         JSONArray data = new JSONArray();
         List<Object> objects = this.queryList(LabelTagParent.class, null);

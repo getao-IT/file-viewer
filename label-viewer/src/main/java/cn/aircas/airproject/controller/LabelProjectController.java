@@ -99,6 +99,7 @@ public class LabelProjectController {
     @PostMapping(value = "/importLabel")
     @Log("导入标注信息")
     public CommonResult<String> importLabel(String imagePath, LabelPointType labelPointType, MultipartFile file) {
+        labelPointType = LabelPointType.GEODEGREE;
         String labelInfo = labelProjectService.importLabel(imagePath, labelPointType, file);
         if (labelInfo == null) {
             return new CommonResult<String>().fail().message("导入标注信息失败");

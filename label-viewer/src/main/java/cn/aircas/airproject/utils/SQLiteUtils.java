@@ -421,4 +421,18 @@ public class SQLiteUtils {
         }
         SQLiteUtils.getSQLiteConnection(clientIp, clientUrl);
     }
+
+
+    /**
+     * 随机生成颜色16进制色号
+     * @return
+     */
+    public static String takeColorHex() {
+        Random random = new Random();
+        StringBuilder color = new StringBuilder("#");
+        for (int i1 = 0; i1 < 6; i1++) {
+            color.append(Integer.toHexString(random.nextInt(16)));
+        }
+        return color.toString();
+    }
 }

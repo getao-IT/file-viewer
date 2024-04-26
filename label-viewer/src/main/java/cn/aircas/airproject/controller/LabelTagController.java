@@ -124,6 +124,7 @@ public class LabelTagController {
     @DeleteMapping("/deleteLabelTagParent")
     public CommonResult<Boolean> deleteLabelTagParent(int id) {
         parentService.setIpAndDriver();
+        childrenService.setIpAndDriver();
         boolean insert = parentService.deleteById(id);
         if (insert) {
             return new CommonResult<Boolean>().success().message("删除一级标签成功");
@@ -170,9 +171,10 @@ public class LabelTagController {
 
 
     @Log("导出标签库")
-    @GetMapping("/exportLabelTag")
+    @PostMapping("/exportLabelTag")
     public CommonResult<String> exportLabelTag() {
         parentService.setIpAndDriver();
+        childrenService.setIpAndDriver();
         String result = parentService.exportLabelTag();
         return new CommonResult<String>().success().data(result).message("导出标签库成功");
     }

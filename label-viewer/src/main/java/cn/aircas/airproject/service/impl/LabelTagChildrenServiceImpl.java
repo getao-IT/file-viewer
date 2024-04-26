@@ -55,6 +55,7 @@ public class LabelTagChildrenServiceImpl implements LabelTagService<LabelTagChil
     @Override
     public List<Object> queryList(Class clazz, Object params) {
         try {
+            SQLiteUtils.getSQLiteConnection(clientIp, driverUrl);
             List<Object> queryList = SQLiteUtils.queryList(clazz, SQLiteUtils.childrenTabelName, params, request);
             if (queryList != null && queryList.size() != 0) {
                 return queryList;
