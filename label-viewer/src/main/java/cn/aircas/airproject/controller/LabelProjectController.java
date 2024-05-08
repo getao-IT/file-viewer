@@ -45,7 +45,7 @@ public class LabelProjectController {
 
     @Log(value = "获取文件夹下的文件和子文件夹")
     @GetMapping("/fileAndFolder")
-    public CommonResult<List<FileAndFolder>> getFileAndFoderList(String path){
+    public CommonResult<List<FileAndFolder>> getFileAndFolderList(String path){
         List<FileAndFolder> folderList = labelProjectService.getFileAndFolderList(path);
         return new CommonResult<List<FileAndFolder>>().data(folderList).success().message("获取文件和文件夹数据成功!");
     }
