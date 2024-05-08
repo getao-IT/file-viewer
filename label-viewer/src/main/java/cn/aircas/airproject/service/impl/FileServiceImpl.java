@@ -117,7 +117,7 @@ public class FileServiceImpl implements FileService {
 
         try {
             Date startTime = DateUtils.parseDate(org.apache.http.client.utils.DateUtils.formatDate(new Date(), "yyyy-MM-dd HH:mm:ss"), new String[]{"yyyy-MM-dd HH:mm:ss"});
-            String sliceInsertPath = slice.getSliceInsertPath() + "." + FilenameUtils.getExtension(filePath);
+            String sliceInsertPath = slice.getSliceInsertPath();
             progress = ProgressContr.builder().taskId(slice.getProgressId()).filePath(filePath).outputPath(sliceInsertPath)
                     .consumTime(0).fileName(new File(filePath).getName()).taskType(TaskType.SLICE).status(TaskStatus.WORKING)
                     .startTime(startTime).progress("50%").describe("固定裁切进行中...").build();
