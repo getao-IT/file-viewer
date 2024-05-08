@@ -379,6 +379,7 @@ public class LabelProjectServiceImpl implements LabelProjectService {
                 if (targetPointType.equals(LabelPointType.PIXEL)) {
                     labelObject = LabelPointTypeConvertor.convertLabelPointType(imagePath, labelObject, CoordinateConvertType.PROJECTION_TO_PIXEL);
                 }
+                //labelObject = LabelPointTypeConvertor.convertLabelPointType(imagePath, labelObject, CoordinateConvertType.PROJECTION_TO_LONLAT);
             }
             XMLUtils.toXMLFile(savePath, labelObject);
             log.info("保存标注信息成功：坐标类型 {}，保存路径 {} ", targetPointType, savePath);

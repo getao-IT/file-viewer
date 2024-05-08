@@ -100,53 +100,60 @@ public class ImageUtil {
      * @param src
      * @param callback
      */
-    public static void opencvGrayConver(String src, String dst, OpenCV.NormalizeType type, GrayConverCallback callback) {
+    public static String opencvGrayConver(String src, String dst, OpenCV.NormalizeType type, GrayConverCallback callback) {
         gdal.AllRegister();
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
         Dataset dataset = gdal.Open(src);
         String projection = dataset.GetProjection();
         double[] geoTransform = dataset.GetGeoTransform();
 
-        Mat matSrc = Imgcodecs.imread(src);
-        //转换成灰度图
-        Mat matGray = new Mat(matSrc.size(), CvType.CV_8UC1);
-        Imgproc.cvtColor(matSrc, matGray, Imgproc.COLOR_BGR2GRAY);
-        //转换成浮点类型矩阵
-        Mat matFloatGray = new Mat(matGray.size(), CvType.CV_32F);
-        matGray.convertTo(matFloatGray, CvType.CV_32F);
-        //归一化处理
-        Mat result = Mat.zeros(matFloatGray.size(), CvType.CV_32FC1);
-        Core.normalize(matFloatGray, result, 0, 1, type.getCode());
+        try {
+            Mat matSrc = Imgcodecs.imread(src);
+            //转换成灰度图
+            Mat matGray = new Mat(matSrc.size(), CvType.CV_8UC1);
+            Imgproc.cvtColor(matSrc, matGray, Imgproc.COLOR_BGR2GRAY);
+            //转换成浮点类型矩阵
+            Mat matFloatGray = new Mat(matGray.size(), CvType.CV_32F);
+            matGray.convertTo(matFloatGray, CvType.CV_32F);
+            //归一化处理
+            Mat result = Mat.zeros(matFloatGray.size(), CvType.CV_32FC1);
+            Core.normalize(matFloatGray, result, 0, 1, type.getCode());
 
-        switch (type) {
-            //MINMAX 按 alpha 和 beta 进行缩放限制，得到的结果为 0 或 1，需要乘以 255 恢复为灰度图数据
-            case MINMAX:
-                //NORM_INF，无穷范数，每个值除以最大值来进行无穷范数归一化，这里限制了最大值为 1，同样需要乘以 255
-            case INF:
-                Core.multiply(result, new Scalar(255), result);
-                break;
-            //1 范数，每个值除以它们的和来进行归一化，生成的最大值 < 1。这里随意取了一个值，保证输出为灰度图数据即可。
-            case L1:
-                Core.multiply(result, new Scalar(20000000), result);
-                break;
-            //2 范数，每个值除以该向量的模长，归一化为单位向量。与 L1 类似，需要乘以一个值保证输出。
-            case L2:
-                Core.multiply(result, new Scalar(30000), result);
-                break;
-            default:
+            switch (type) {
+                //MINMAX 按 alpha 和 beta 进行缩放限制，得到的结果为 0 或 1，需要乘以 255 恢复为灰度图数据
+                case MINMAX:
+                    //NORM_INF，无穷范数，每个值除以最大值来进行无穷范数归一化，这里限制了最大值为 1，同样需要乘以 255
+                case INF:
+                    Core.multiply(result, new Scalar(255), result);
+                    break;
+                //1 范数，每个值除以它们的和来进行归一化，生成的最大值 < 1。这里随意取了一个值，保证输出为灰度图数据即可。
+                case L1:
+                    Core.multiply(result, new Scalar(20000000), result);
+                    break;
+                //2 范数，每个值除以该向量的模长，归一化为单位向量。与 L1 类似，需要乘以一个值保证输出。
+                case L2:
+                    Core.multiply(result, new Scalar(30000), result);
+                    break;
+                default:
+            }
+
+            if (new File(dst).exists()) {
+                dst = cn.aircas.airproject.utils.FileUtils.autoMakeIfFileRepeat(new File(dst)).getAbsolutePath();
+            }
+            result.convertTo(result, CvType.CV_8UC1);
+            Imgcodecs.imwrite(dst, result);
+
+            if (StringUtils.isNotBlank(projection)){
+                dataset = gdal.Open(dst, gdalconst.GA_Update);
+                dataset.SetProjection(projection);
+                dataset.SetGeoTransform(geoTransform);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "灰度转换失败或不支持的灰度转换类型";
         }
 
-        if (new File(dst).exists()) {
-            dst = cn.aircas.airproject.utils.FileUtils.autoMakeIfFileRepeat(new File(dst)).getAbsolutePath();
-        }
-        result.convertTo(result, CvType.CV_8UC1);
-        Imgcodecs.imwrite(dst, result);
-
-        if (StringUtils.isNotBlank(projection)){
-            dataset = gdal.Open(dst, gdalconst.GA_Update);
-            dataset.SetProjection(projection);
-            dataset.SetGeoTransform(geoTransform);
-        }
+        return "灰度转换成功";
     }
 
 
@@ -194,15 +201,13 @@ public class ImageUtil {
                 dataset.FlushCache();
                 dataset.delete();
                 log.info("格式转换成功");
-                return path;
+                return "格式转换成功";
             }
 
         } catch (Exception e) {
-
-            throw new RuntimeException(e);
-
+            e.printStackTrace();
+            return "当前格式不支持的转换为"+format+"类型";
         }
-
     }
 
 

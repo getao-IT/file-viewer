@@ -58,6 +58,7 @@ public class FileProcessingServiceImpl implements FileProcessingService {
         long taskStartTime = System.currentTimeMillis();
         ProgressContr progress = null;
         ProgressService service = new ProgressServiceImpl();
+        String backMessage = "";
 
         try {
             Date startTime = DateUtils.parseDate(org.apache.http.client.utils.DateUtils.formatDate(new Date(), "yyyy-MM-dd HH:mm:ss"), new String[]{"yyyy-MM-dd HH:mm:ss"});
@@ -67,14 +68,14 @@ public class FileProcessingServiceImpl implements FileProcessingService {
             ProgressContr taskById = service.createTaskById(progress);
             log.info("创建传输任务成功：taskId {}， 任务类型 {}， [ {} ]", progressId, TaskType.CONVERTER, taskById);
             //ImageFormat.formatConvertor(input, outputParentPath.getAbsolutePath(), format);
-            ImageUtil.formatConvertor(input, outputParentPath.getAbsolutePath(), format, progress);
+            backMessage = ImageUtil.formatConvertor(input, outputParentPath.getAbsolutePath(), format, progress);
             ProgressContrDto success = ProgressContrDto.builder().taskId(progressId).filePath(input).startTime(progress.getStartTime())
-                    .endTime(new Date()).describe("格式转换成功").status(TaskStatus.FINISH).progress("100%").consumTime(System.currentTimeMillis() - taskStartTime).build();
+                    .endTime(new Date()).describe(backMessage).status(TaskStatus.FINISH).progress("100%").consumTime(System.currentTimeMillis() - taskStartTime).build();
             int i = service.updateProgress(success);
             log.info("格式转换成功， 更新状态：{}, [ {} ]",i, success);
         }catch (Exception e){
             ProgressContrDto fail = ProgressContrDto.builder().taskId(progressId).filePath(input).startTime(progress.getStartTime())
-                    .endTime(new Date()).describe("格式转换失败").status(TaskStatus.FAIL).consumTime(System.currentTimeMillis() - taskStartTime).build();
+                    .endTime(new Date()).describe(backMessage).status(TaskStatus.FAIL).consumTime(System.currentTimeMillis() - taskStartTime).build();
             int i = service.updateProgress(fail);
             log.error("格式转换异常：{}，更新状态：{}, [ {} ]", e.getMessage(), i, fail);
         }
@@ -94,6 +95,7 @@ public class FileProcessingServiceImpl implements FileProcessingService {
         long taskStartTime = System.currentTimeMillis();
         ProgressContr progress = null;
         ProgressService service = new ProgressServiceImpl();
+        String backMeaage = "";
 
         try {
             src = FileUtils.getStringPath(this.rootPath, src);
@@ -104,14 +106,14 @@ public class FileProcessingServiceImpl implements FileProcessingService {
                     .startTime(startTime).progress("50%").describe("灰度转换中...").build();
             ProgressContr taskById = service.createTaskById(progress);
             log.info("创建传输任务成功：taskId {}， 任务类型 {}， [ {} ]", progressId, TaskType.CONVERTER, taskById);
-            ImageUtil.opencvGrayConver(src, dst, type, callback);
+            backMeaage = ImageUtil.opencvGrayConver(src, dst, type, callback);
             ProgressContrDto success = ProgressContrDto.builder().taskId(progressId).filePath(src).startTime(progress.getStartTime())
-                    .endTime(new Date()).describe("灰度转换成功").status(TaskStatus.FINISH).progress("100%").consumTime(System.currentTimeMillis() - taskStartTime).build();
+                    .endTime(new Date()).describe(backMeaage).status(TaskStatus.FINISH).progress("100%").consumTime(System.currentTimeMillis() - taskStartTime).build();
             int i = service.updateProgress(success);
             log.info("灰度转换成功， 更新状态：{}, [ {} ]",i, success);
         } catch (Exception e) {
             ProgressContrDto fail = ProgressContrDto.builder().taskId(progressId).filePath(src).startTime(progress.getStartTime())
-                    .endTime(new Date()).describe("灰度转换失败").status(TaskStatus.FAIL).consumTime(System.currentTimeMillis() - taskStartTime).build();
+                    .endTime(new Date()).describe(backMeaage).status(TaskStatus.FAIL).consumTime(System.currentTimeMillis() - taskStartTime).build();
             int i = service.updateProgress(fail);
             log.error("灰度转换异常：{}，更新状态：{}, [ {} ]", e.getMessage(), i, fail);
         }
