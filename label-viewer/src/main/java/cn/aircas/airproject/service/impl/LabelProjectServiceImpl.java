@@ -399,45 +399,53 @@ public class LabelProjectServiceImpl implements LabelProjectService {
      */
     @Override
     public String exportLabel(SaveLabelRequest labelRequest) {
+        LabelFileType labelFileType = labelRequest.getLabelFileType();
         LabelPointType labelPointType = labelRequest.getLabelPointType();
         LabelPointType targetPointType = labelRequest.getTargetPointType();
-
+        String filePath = FileUtils.getStringPath(this.rootDir, labelRequest.getImagePath());
         String labelInfo = labelRequest.getLabel();
         if (labelInfo == null) {
             log.error("无标注信息");
             return null;
         }
 
-        String filePath = FileUtils.getStringPath(this.rootDir, labelRequest.getImagePath());
-        LabelObject xmlLabelObjectInfo = JSONObject.toJavaObject(JSONObject.parseObject(labelInfo), XMLLabelObjectInfo.class);
-        if (labelPointType == LabelPointType.GEODEGREE) {
-            if (targetPointType == LabelPointType.PIXEL) {
-                xmlLabelObjectInfo = LabelPointTypeConvertor.convertLabelPointType(filePath, xmlLabelObjectInfo, CoordinateConvertType.LONLAT_TO_PIXEL);
-            }
-            if (targetPointType == LabelPointType.PROJECTION) {
-                xmlLabelObjectInfo = LabelPointTypeConvertor.convertLabelPointType(filePath, xmlLabelObjectInfo, CoordinateConvertType.LONLAT_TO_PROJECTION);
-            }
+        String xmlString = "";
+        if (labelFileType == LabelFileType.XML){
+            xmlString = saveAsXML(labelRequest.getImagePath(),labelInfo,labelPointType,targetPointType);
         }
-        if (labelPointType == LabelPointType.PROJECTION) {
-            if (targetPointType == LabelPointType.PIXEL) {
-                xmlLabelObjectInfo = LabelPointTypeConvertor.convertLabelPointType(filePath, xmlLabelObjectInfo, CoordinateConvertType.PROJECTION_TO_PIXEL);
-            }
-            if (targetPointType == LabelPointType.GEODEGREE) {
-                xmlLabelObjectInfo = LabelPointTypeConvertor.convertLabelPointType(filePath, xmlLabelObjectInfo, CoordinateConvertType.PROJECTION_TO_LONLAT);
-            }
-        }
-        if (labelPointType == LabelPointType.PIXEL) {
-            if (targetPointType == LabelPointType.GEODEGREE) {
-                xmlLabelObjectInfo = LabelPointTypeConvertor.convertLabelPointType(filePath, xmlLabelObjectInfo, CoordinateConvertType.PIXEL_TO_LONLAT);
-            }
-            if (targetPointType == LabelPointType.PROJECTION) {
-                xmlLabelObjectInfo = LabelPointTypeConvertor.convertLabelPointType(filePath, xmlLabelObjectInfo, CoordinateConvertType.PIXEL_TO_PROJECTION);
-            }
-        }
-        if (labelPointType == LabelPointType.PIXEL && targetPointType == LabelPointType.PIXEL) {
-            xmlLabelObjectInfo = LabelPointTypeConvertor.convertLabelPointType(filePath, xmlLabelObjectInfo, CoordinateConvertType.PIXEL_REVERSION);
-        }
-        String xmlString = XMLUtils.toXMLString(xmlLabelObjectInfo);
+
+//        String filePath = FileUtils.getStringPath(this.rootDir, labelRequest.getImagePath());
+//        LabelObject xmlLabelObjectInfo = JSONObject.toJavaObject(JSONObject.parseObject(labelInfo), XMLLabelObjectInfo.class);
+//        if (labelPointType == LabelPointType.GEODEGREE) {
+//            if (targetPointType == LabelPointType.PIXEL) {
+//                xmlLabelObjectInfo = LabelPointTypeConvertor.convertLabelPointType(filePath, xmlLabelObjectInfo, CoordinateConvertType.LONLAT_TO_PIXEL);
+//            }
+//            if (targetPointType == LabelPointType.PROJECTION) {
+//                xmlLabelObjectInfo = LabelPointTypeConvertor.convertLabelPointType(filePath, xmlLabelObjectInfo, CoordinateConvertType.LONLAT_TO_PROJECTION);
+//            }
+//        }
+//        if (labelPointType == LabelPointType.PROJECTION) {
+//            if (targetPointType == LabelPointType.PIXEL) {
+//                xmlLabelObjectInfo = LabelPointTypeConvertor.convertLabelPointType(filePath, xmlLabelObjectInfo, CoordinateConvertType.PROJECTION_TO_PIXEL);
+//            }
+//            if (targetPointType == LabelPointType.GEODEGREE) {
+//                xmlLabelObjectInfo = LabelPointTypeConvertor.convertLabelPointType(filePath, xmlLabelObjectInfo, CoordinateConvertType.PROJECTION_TO_LONLAT);
+//            }
+//        }
+//        if (labelPointType == LabelPointType.PIXEL) {
+//            if (targetPointType == LabelPointType.GEODEGREE) {
+//                xmlLabelObjectInfo = LabelPointTypeConvertor.convertLabelPointType(filePath, xmlLabelObjectInfo, CoordinateConvertType.PIXEL_TO_LONLAT);
+//            }
+//            if (targetPointType == LabelPointType.PROJECTION) {
+//                xmlLabelObjectInfo = LabelPointTypeConvertor.convertLabelPointType(filePath, xmlLabelObjectInfo, CoordinateConvertType.PIXEL_TO_PROJECTION);
+//            }
+//        }
+//        if (labelPointType == LabelPointType.PIXEL && targetPointType == LabelPointType.PIXEL) {
+//            xmlLabelObjectInfo = LabelPointTypeConvertor.convertLabelPointType(filePath, xmlLabelObjectInfo, CoordinateConvertType.PIXEL_REVERSION);
+//        }
+
+
+
 
         OutputStream os = null;
         try {
@@ -467,6 +475,42 @@ public class LabelProjectServiceImpl implements LabelProjectService {
         }
 
         return filePath;
+    }
+
+    /**
+     * 将标注信息保存为xml
+     */
+    public String saveAsXML (String imagePath,String labelInfo,LabelPointType labelPointType, LabelPointType targetPointType){
+        String filePath = FileUtils.getStringPath(this.rootDir, imagePath);
+        LabelObject xmlLabelObjectInfo = JSONObject.toJavaObject(JSONObject.parseObject(labelInfo), XMLLabelObjectInfo.class);
+        if (labelPointType == LabelPointType.GEODEGREE) {
+            if (targetPointType == LabelPointType.PIXEL) {
+                xmlLabelObjectInfo = LabelPointTypeConvertor.convertLabelPointType(filePath, xmlLabelObjectInfo, CoordinateConvertType.LONLAT_TO_PIXEL);
+            }
+            if (targetPointType == LabelPointType.PROJECTION) {
+                xmlLabelObjectInfo = LabelPointTypeConvertor.convertLabelPointType(filePath, xmlLabelObjectInfo, CoordinateConvertType.LONLAT_TO_PROJECTION);
+            }
+        }
+        if (labelPointType == LabelPointType.PROJECTION) {
+            if (targetPointType == LabelPointType.PIXEL) {
+                xmlLabelObjectInfo = LabelPointTypeConvertor.convertLabelPointType(filePath, xmlLabelObjectInfo, CoordinateConvertType.PROJECTION_TO_PIXEL);
+            }
+            if (targetPointType == LabelPointType.GEODEGREE) {
+                xmlLabelObjectInfo = LabelPointTypeConvertor.convertLabelPointType(filePath, xmlLabelObjectInfo, CoordinateConvertType.PROJECTION_TO_LONLAT);
+            }
+        }
+        if (labelPointType == LabelPointType.PIXEL) {
+            if (targetPointType == LabelPointType.GEODEGREE) {
+                xmlLabelObjectInfo = LabelPointTypeConvertor.convertLabelPointType(filePath, xmlLabelObjectInfo, CoordinateConvertType.PIXEL_TO_LONLAT);
+            }
+            if (targetPointType == LabelPointType.PROJECTION) {
+                xmlLabelObjectInfo = LabelPointTypeConvertor.convertLabelPointType(filePath, xmlLabelObjectInfo, CoordinateConvertType.PIXEL_TO_PROJECTION);
+            }
+        }
+        if (labelPointType == LabelPointType.PIXEL && targetPointType == LabelPointType.PIXEL) {
+            xmlLabelObjectInfo = LabelPointTypeConvertor.convertLabelPointType(filePath, xmlLabelObjectInfo, CoordinateConvertType.PIXEL_REVERSION);
+        }
+        return XMLUtils.toXMLString(xmlLabelObjectInfo);
     }
 
 

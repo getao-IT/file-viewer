@@ -148,6 +148,10 @@ public class XMLLabelObjectInfo implements LabelObject {
         for (Integer objectIndex : labelPointMap.keySet()) {
             XMLLabelObject xmlLabelObject = this.XMLLabelObjectList.get(objectIndex);
             xmlLabelObject.setCoordinate(coordinate.toLowerCase());
+            if (coordinate.equalsIgnoreCase("pixel"))
+                xmlLabelObject.setDescription("像素坐标");
+            else
+                xmlLabelObject.setDescription("经纬度坐标");
 
             if (xmlLabelObject.getType().equalsIgnoreCase("CustomCircle")) {
                 double[] cocLngLat = labelPointMap.get(objectIndex)[0];

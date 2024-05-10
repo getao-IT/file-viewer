@@ -1,12 +1,10 @@
 package cn.aircas.airproject.entity.emun;
 
-
 /**
- * 标注文件的保存类型：xml、图片还是shp文件
+ * xml格式枚举类
  */
-public enum LabelFileType {
-
-    XML(0), PIC(1),SHP(2);
+public enum LabelXMLFormat {
+    AIRCAS(0), VOC(1), VIF(2);
 
     private int code;
 
@@ -18,7 +16,7 @@ public enum LabelFileType {
         this.code = code;
     }
 
-    LabelFileType(int code) {
+    LabelXMLFormat(int code) {
         this.code = code;
     }
 }
