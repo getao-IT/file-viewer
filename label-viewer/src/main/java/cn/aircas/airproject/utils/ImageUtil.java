@@ -7,9 +7,7 @@ import cn.aircas.utils.file.FileUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.gdal.gdal.Dataset;
-import org.gdal.gdal.Driver;
-import org.gdal.gdal.gdal;
+import org.gdal.gdal.*;
 import org.gdal.gdalconst.gdalconst;
 import org.gdal.gdalconst.gdalconstConstants;
 import org.opencv.core.Core;
@@ -21,8 +19,7 @@ import org.opencv.imgproc.Imgproc;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.*;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 
@@ -166,11 +163,12 @@ public class ImageUtil {
      */
     public static String formatConvertor(String inputPath, String outputPath, String format, ProgressContr progress) {
 
+
         try {
             gdal.AllRegister();
             gdal.SetConfigOption("GDAL_FILENAME_IS_UTF8", "YES");
-            Dataset ds = gdal.Open(inputPath, gdalconstConstants.GA_ReadOnly);
-            if (ds == null) {
+            Dataset srcDataset = gdal.Open(inputPath, gdalconstConstants.GA_ReadOnly);
+            if (srcDataset == null) {
                 log.error("GDALOpen failed-" + gdal.VSIGetLastErrorNo());
                 log.error(gdal.GetLastErrorMsg());
                 return null;
@@ -179,6 +177,7 @@ public class ImageUtil {
                 Driver hDriver = gdal.GetDriverByName(format);
                 log.info("Driver:" + hDriver.getShortName() + "/" + hDriver.getLongName());
                 String baseName = FilenameUtils.getBaseName(inputFile.getName());
+
                 String extension;
                 if (format.equalsIgnoreCase("JPEG")) {
                     extension = "jpg";
@@ -188,18 +187,29 @@ public class ImageUtil {
                     extension = format.toLowerCase();
                 }
 
-                String path = FileUtils.getStringPath(outputPath, new Object[]{baseName}) + "." + extension;
-                progress.setOutputPath(path.replace("/home/data", ""));
-                if (new File(path).exists()) {
-                    path = cn.aircas.airproject.utils.FileUtils.autoMakeIfFileRepeat(new File(path)).getAbsolutePath();
+                String dstPath = FileUtils.getStringPath(outputPath, new Object[]{baseName}) + "." + extension;
+                progress.setOutputPath(dstPath.replace("/home/data", ""));
+                if (new File(dstPath).exists()) {
+                    dstPath = cn.aircas.airproject.utils.FileUtils.autoMakeIfFileRepeat(new File(dstPath)).getAbsolutePath();
                 }
 
-                Dataset dataset = hDriver.CreateCopy(path, ds,1,null, new GdalConverProgressCallback(progress));
-                ds.FlushCache();
-                ds.delete();
-                hDriver.delete();
-                dataset.FlushCache();
-                dataset.delete();
+                int bandCount = srcDataset.getRasterCount();
+                List<Integer> bandmapping = null;
+                if(bandCount == 1){
+                    ;
+                } else if(bandCount == 3){
+                    bandmapping = new ArrayList<>(Arrays.asList(new Integer[]{1,2,3}));
+                } else if (bandCount == 4){
+                    bandmapping = new ArrayList<>(Arrays.asList(new Integer[]{1,2,3}));
+                } else {
+                    int partitionBoard = bandCount/3;
+                    bandmapping = new ArrayList<>(Arrays.asList(new Integer[]{partitionBoard,2*partitionBoard,3*partitionBoard}));
+                }
+                TranslateOptions translateOptions = getTranslateOptions(srcDataset, bandmapping, format);
+                gdal.Translate(dstPath, srcDataset, translateOptions, new GdalConverProgressCallback(progress));
+
+                srcDataset.FlushCache();
+                srcDataset.delete();
                 log.info("格式转换成功");
                 return "格式转换成功";
             }
@@ -208,7 +218,48 @@ public class ImageUtil {
             e.printStackTrace();
             return "当前格式不支持的转换为"+format+"类型";
         }
+
     }
+
+    /**
+     * 根据设定的波段映射关系，将源图像转换为指定类型的图像
+     * @param srcDataset 原图像的Dataset对象，不能为null
+     * @param bandMapping 图像格式转换时使用的波段映射列表，(100,1,80)表示源图像100波段映射为新图像第1个波段，依次类推；单波段图像，该值为null
+     * @param transExtension 要转换的图像后缀名在gdal中的格式字符串
+     * @return 根据输入参数情况生成的供gdal.translate使用的转换选项对象
+     */
+    private static TranslateOptions getTranslateOptions(Dataset srcDataset, List<Integer> bandMapping, String transExtension){
+        if(srcDataset == null){
+            return null;
+        }
+        if(bandMapping == null){
+            bandMapping = new LinkedList<>();
+            bandMapping.add(1);
+        }
+
+        int bandCount = bandMapping.size();
+        StringBuilder cmdSb = new StringBuilder();
+        cmdSb.append("-ot Byte -of ");
+        cmdSb.append(transExtension);
+        cmdSb.append(" ");
+        double[] minmax = new double[2];
+        for(int i = 0; i < bandCount; ++i){
+            Band band = srcDataset.GetRasterBand(bandMapping.get(i));
+            band.ComputeRasterMinMax(minmax);
+
+            cmdSb.append(" -b ");
+            cmdSb.append(bandMapping.get(i));
+            cmdSb.append(" -scale_");
+            cmdSb.append(i+1);
+            cmdSb.append(" ");
+            cmdSb.append(minmax[0]);
+            cmdSb.append(" ");
+            cmdSb.append(minmax[1]);
+            cmdSb.append(" 0 255");
+        }
+        return new TranslateOptions(gdal.ParseCommandLine(cmdSb.toString()));
+    }
+
 
 
     /**
