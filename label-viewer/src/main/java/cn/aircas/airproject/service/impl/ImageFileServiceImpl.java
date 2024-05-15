@@ -127,7 +127,8 @@ public class ImageFileServiceImpl implements FileTypeService {
         //Image image = this.getById(id);
         String filePath = FileUtils.getStringPath(this.rootPath, imagePath);
 
-        String xmlPath = filePath + ".xml";
+
+        String xmlPath = cn.aircas.airproject.utils.FileUtils.replaceFileExtension(filePath, "xml");
         XMLLabelObjectInfo xmlLabelObjectInfo = null;
         if (new File(xmlPath).exists()) {
             xmlLabelObjectInfo = XMLUtils.parseXMLFromFile(XMLLabelObjectInfo.class, xmlPath);
@@ -223,6 +224,7 @@ public class ImageFileServiceImpl implements FileTypeService {
      */
     public void makeImageGeoSlice(Slice slice) {
         String filePath = FileUtils.getStringPath(this.rootPath, slice.getImagePath());
+//        String filePath = slice.getImagePath();
         //String filePath = "C:\\Users\\dell\\Desktop\\image\\3.tiff";
         File file = new File(filePath);
         double minX = slice.getMinLon();
@@ -230,12 +232,13 @@ public class ImageFileServiceImpl implements FileTypeService {
         double maxX = slice.getMinLon() + slice.getWidth();
         double maxY = slice.getMinLat() + slice.getHeight();
         String sliceInsertPath = FileUtils.getStringPath(this.rootPath, slice.getSliceInsertPath());
+//        String sliceInsertPath =  slice.getSliceInsertPath();
         double[] range = new double[]{minX, minY, maxX, maxY};
 
         // 是否生成XML
         if (slice.getTakeLabelXml()) {
             // 是否保留空白切片
-            String xmlPath = filePath + ".xml";
+            String xmlPath = cn.aircas.airproject.utils.FileUtils.replaceFileExtension(filePath, "xml");
             if (new File(xmlPath).exists()) {
                 XMLLabelObjectInfo xmlLabelObjectInfo = XMLUtils.parseXMLFromFile(XMLLabelObjectInfo.class, xmlPath);
                 double[] newRang = range;
@@ -274,7 +277,7 @@ public class ImageFileServiceImpl implements FileTypeService {
      * @param range
      */
     public void takeSliceXml(String filePath, String slicePath, double[] range) {
-        String xmlPath = filePath + ".xml";
+        String xmlPath = cn.aircas.airproject.utils.FileUtils.replaceFileExtension(filePath, "xml");
         XMLLabelObjectInfo xmlLabelObjectInfo = XMLUtils.parseXMLFromFile(XMLLabelObjectInfo.class, xmlPath);
         List<XMLLabelObjectInfo.XMLLabelObject> xmlLabelObjectList = xmlLabelObjectInfo.getXMLLabelObjectList();
         List<XMLLabelObjectInfo.XMLLabelObject> sliceXmlLabelObject = new ArrayList<>();
@@ -291,6 +294,9 @@ public class ImageFileServiceImpl implements FileTypeService {
         });
         for (int i = 0; i < xmlLabelObjectList.size(); i++) {
             XMLLabelObjectInfo.XMLLabelObject xmlLabelObject = xmlLabelObjectList.get(i);
+            if(xmlLabelObject.getType().equalsIgnoreCase("customcircle") ||
+                xmlLabelObject.getType().equalsIgnoreCase("line"))
+                continue;
             List<String> point = xmlLabelObject.getPoints().getPoint();
             /*if (xmlLabelObject.getCoordinate().equalsIgnoreCase("geodegree"))
                 point = ImageSliceUtils.convertPixelToLonlatFromPoints(filePath, point, GeoUtils.COORDINATE_LONLAT);
@@ -324,7 +330,8 @@ public class ImageFileServiceImpl implements FileTypeService {
             sliceXmlLabelObject.add(xmlLabelObject);
         }
         xmlLabelObjectInfo.setXMLLabelObjectList(sliceXmlLabelObject);
-        String saveXmlPath = slicePath + ".xml";
+
+        String saveXmlPath = cn.aircas.airproject.utils.FileUtils.replaceFileExtension(slicePath, "xml");
         XMLUtils.toXMLFile(saveXmlPath, xmlLabelObjectInfo);
         log.info("生成切片 {} 并保存XML文件 {} 成功 ", slicePath, saveXmlPath);
     }
