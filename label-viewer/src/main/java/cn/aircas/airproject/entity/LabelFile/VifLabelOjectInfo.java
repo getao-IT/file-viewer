@@ -171,6 +171,36 @@ public class VifLabelOjectInfo implements LabelObject {
         return headObject;
     }
 
+    public JSONObject vifJsonToLabelInfo(){
+        JSONObject object = new JSONObject();
+        JSONArray ppe = new JSONArray();
+        for(int i = 0; i < vifLabelObjectList.size(); ++i){
+            JSONObject pe = new JSONObject();
+            JSONObject e = new JSONObject();
+            List<String> point = new ArrayList<>();
+            for (VifLabelObject.GeoShapePoint geoShapePoint : vifLabelObjectList.get(i).getGeoShapePointList()) {
+                double xCoordinate = Double.parseDouble(geoShapePoint.getX());
+                double yCoordinate = Double.parseDouble(geoShapePoint.getY());
+                point.add(xCoordinate + "," + yCoordinate);
+            }
+            e.put("point", point);
+            pe.put("points", e);
+            pe.put("id", i);
+            pe.put("coordinate", "geodegree");
+            pe.put("description", "经纬度坐标");
+            List<JSONObject> possibleresult = new ArrayList<>();
+            JSONObject poss = new JSONObject();
+            poss.put("probability", 1);
+            poss.put("name", "未知");
+            possibleresult.add(poss);
+            pe.put("possibleresult", possibleresult);
+            pe.put("type", "Polygon");
+            ppe.add(pe);
+        }
+        object.put("object", ppe);
+        return object;
+    }
+
     public static void main(String[] args) {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("sdf", "sdf");

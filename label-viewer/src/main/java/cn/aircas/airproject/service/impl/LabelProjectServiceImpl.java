@@ -27,6 +27,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -132,6 +133,15 @@ public class LabelProjectServiceImpl implements LabelProjectService {
         String imageFilePath = FileUtils.getStringPath(this.rootDir, imagePath);
         Class clazz = labelPath.endsWith("xml") ? XMLLabelObjectInfo.class : VifLabelOjectInfo.class;
         LabelObject labelObject = (LabelObject) XMLUtils.parseXMLFromFile(clazz, labelPath);
+        if(null == labelObject){
+            return "label info format error";
+        }
+        if(VifLabelOjectInfo.class == clazz){
+            Method vifJsonToLabelInfo = clazz.getMethod("vifJsonToLabelInfo");
+            JSONObject vifObject = (JSONObject) vifJsonToLabelInfo.invoke(labelObject);
+            return vifObject.toJSONString();
+        }
+
         String coordinate = labelObject.getCoordinate();
         CoordinateConvertType coordinateConvertType = CoordinateConvertType.NO_ACTION;
         //如果标注点类型与图像坐标系不同
