@@ -93,7 +93,7 @@ public class LabelPointTypeConvertor {
         Dataset dataset = gdal.Open(imagePath);
         for (double[][] pointValue : labelPointMap.values()) {
             for (double[] point : pointValue) {
-                point[1] = dataset.getRasterYSize()-point[1];
+//                point[1] = dataset.getRasterYSize()-point[1];
                 double[] coordination = GeoUtils.pixel2Coordinate(point[0],point[1],dataset,GeoUtils.COORDINATE_LONLAT);
                 point[0] = coordination[0];
                 point[1] = coordination[1];
