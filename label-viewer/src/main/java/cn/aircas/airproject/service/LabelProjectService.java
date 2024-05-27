@@ -1,6 +1,8 @@
 package cn.aircas.airproject.service;
 
 import cn.aircas.airproject.entity.domain.*;
+import cn.aircas.airproject.entity.emun.LabelFileFormat;
+import cn.aircas.airproject.entity.emun.LabelFileType;
 import cn.aircas.airproject.entity.emun.LabelPointType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -37,6 +39,8 @@ public interface LabelProjectService {
     String updateXml(MultipartFile multipartFile) throws Exception;
 
     String viewXmlFile(String imagePath , LabelPointType labelPointType , String xmlPath) throws Exception;
+
+    String viewSelectedLabelFile(String imagePath, String labelPath, LabelFileType fileType, LabelFileFormat fileFormat) throws Exception;
 
     boolean saveLabel(SaveLabelRequest saveLabelRequest) throws IOException;
 

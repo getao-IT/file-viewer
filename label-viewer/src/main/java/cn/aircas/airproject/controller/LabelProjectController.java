@@ -3,6 +3,8 @@ package cn.aircas.airproject.controller;
 import cn.aircas.airproject.config.aop.annotation.Log;
 import cn.aircas.airproject.entity.common.CommonResult;
 import cn.aircas.airproject.entity.domain.*;
+import cn.aircas.airproject.entity.emun.LabelFileFormat;
+import cn.aircas.airproject.entity.emun.LabelFileType;
 import cn.aircas.airproject.entity.emun.LabelPointType;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
@@ -40,6 +42,15 @@ public class LabelProjectController {
             return new CommonResult<String>().success().data(json).message("该影像无标注信息");
         }
         return new CommonResult<String>().success().data(json).message("从服务器打开xml文件成功!");
+    }
+
+    @Log("打开指定位置的标注文件")
+    @PostMapping(value = "/viwLabelFile")
+    public CommonResult<String> viewSelectedLabelFile(String imagePath, String labelPath, LabelFileType fileType, LabelFileFormat fileFormat) throws Exception {
+
+        String json = labelProjectService.viewSelectedLabelFile(imagePath, labelPath, fileType, fileFormat);
+        String msg = StringUtils.isBlank(json) ? "该影像无标注信息":"从服务器打开指定标注文件成功!";
+        return new CommonResult<String>().success().data(json).message(msg);
     }
 
 

@@ -90,7 +90,7 @@ public class VifLabelOjectInfo implements LabelObject {
 
     @Override
     public JSONObject toJSONObject() {
-        return null;
+        return vifJsonToLabelInfo();
     }
 
     @Override
