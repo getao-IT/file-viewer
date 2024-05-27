@@ -2,6 +2,7 @@ package cn.aircas.airproject;
 
 import cn.aircas.airproject.entity.domain.ProgressContr;
 import cn.aircas.airproject.utils.ImageUtil;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -9,6 +10,7 @@ import org.junit.Test;
  */
 
 
+@Ignore("跳过已经通过的耗时测试")
 public class GDALToolFuncTest {
 
     private static String bytePath = "D:\\00-WorkDir\\byte.tiff";

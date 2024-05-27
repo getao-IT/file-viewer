@@ -8,7 +8,6 @@ import cn.aircas.airproject.entity.emun.*;
 import cn.aircas.airproject.utils.LabelPointTypeConvertor;
 import cn.aircas.airproject.utils.ParseImageInfo;
 import cn.aircas.airproject.utils.XMLUtils;
-import com.sun.deploy.xml.XMLable;
 import org.springframework.stereotype.Component;
 
 /**

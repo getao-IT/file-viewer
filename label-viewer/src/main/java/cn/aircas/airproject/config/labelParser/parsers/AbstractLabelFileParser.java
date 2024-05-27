@@ -37,19 +37,26 @@ public abstract class AbstractLabelFileParser implements LabelFileParser, Initia
 
     @Override
     public String parseLabelFile(String labelPath, String imagePath) {
+        log.info("检查标注文件以及对应图像是否存在");
         //文件地址以及图像地址的前期处理；
         if(false == beforeLabelFileParse(labelPath, imagePath, this.rootDir)){
             return null;
         }
+        log.info("标注文件以及对应图像存在");
 
+        log.info("解析指定的标注文件{}",this.labelFullPath);
         //解析文件对象——这里的异常如何处理，抛出？还是自己内部处理掉？感觉抛出更好，否则返回null会有多个情况
         LabelObject labelObject = parseLabelFile();
+        log.info("解析指定的标注文件{}完成",this.labelFullPath);
 
         //解析对象的后处理
+        log.info("执行标注文件{}解析后的处理", this.labelFullPath);
         if( false == afterLabelFileParse(labelObject)) {
+            log.info("执行标注文件{}解析后处理失败", this.labelFullPath);
             return null;
         }
 
+        log.info("执行标注文件{}解析后处理成功", this.labelFullPath);
         return labelObject.toJSONObject().toJSONString();
     }
 
