@@ -109,7 +109,7 @@ public class LabelProjectController {
 
     @PostMapping(value = "/importLabel")
     @Log("导入标注信息")
-    public CommonResult<String> importLabel(String imagePath, LabelPointType labelPointType, MultipartFile file) {
+    public CommonResult<String> importLabel(String imagePath, LabelPointType labelPointType, MultipartFile file) throws IOException {
         labelPointType = LabelPointType.GEODEGREE;
         String labelInfo = labelProjectService.importLabel(imagePath, labelPointType, file);
         if (labelInfo == null) {

@@ -1,7 +1,9 @@
-package cn.aircas.airproject.config.labelParser.parsers;
+package cn.aircas.airproject.config.labelParser.parsers.impl;
 
+import cn.aircas.airproject.config.labelParser.parsers.impl.AbstractLabelFileParser;
 import cn.aircas.airproject.entity.LabelFile.LabelObject;
 import cn.aircas.airproject.entity.LabelFile.VifLabelOjectInfo;
+import cn.aircas.airproject.entity.emun.LabelCategory;
 import cn.aircas.airproject.entity.emun.LabelFileFormat;
 import cn.aircas.airproject.entity.emun.LabelFileType;
 import cn.aircas.airproject.utils.XMLUtils;
@@ -17,18 +19,21 @@ import org.springframework.stereotype.Component;
 
 
 @Component
-public class LabelParserForVIF extends AbstractLabelFileParser{
-
+public class LabelFileParserForVIF extends AbstractLabelFileParser {
 
     @Override
-    public boolean support(LabelFileType fileType, LabelFileFormat format) {
-        return (format == LabelFileFormat.VIF);
+    public boolean support(LabelFileType fileType, LabelFileFormat format, LabelCategory category) {
+        return  format == LabelFileFormat.VIF &&
+                category == LabelCategory.LABEL_FILE;
     }
 
 
     @Override
     protected LabelObject parseLabelFile() {
         VifLabelOjectInfo vifLabelOjectInfo = XMLUtils.parseXMLFromFile(VifLabelOjectInfo.class, this.labelFullPath);
+        if(null == vifLabelOjectInfo) {
+            throw new RuntimeException("vif file VIF format error");
+        }
         return vifLabelOjectInfo;
     }
 

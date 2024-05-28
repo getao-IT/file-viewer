@@ -48,7 +48,7 @@ public interface LabelProjectService {
 
     List<String> importTag(String tagFilePath);
 
-    String importLabel(String imagePath, LabelPointType labelPointType, MultipartFile file);
+    String importLabel(String imagePath, LabelPointType labelPointType, MultipartFile file) throws IOException;
 
     String exportLabel(SaveLabelRequest labelRequest);
 }

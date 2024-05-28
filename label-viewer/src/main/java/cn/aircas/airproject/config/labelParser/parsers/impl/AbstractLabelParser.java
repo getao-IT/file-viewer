@@ -1,46 +1,65 @@
-package cn.aircas.airproject.config.labelParser.parsers;
+package cn.aircas.airproject.config.labelParser.parsers.impl;
 
+import cn.aircas.airproject.config.labelParser.parsers.LabelParser;
 import cn.aircas.airproject.entity.LabelFile.LabelObject;
-import cn.aircas.airproject.entity.LabelFile.XMLLabelObjectInfo;
 import cn.aircas.airproject.entity.domain.ImageInfo;
 import cn.aircas.airproject.entity.emun.*;
+import cn.aircas.airproject.utils.FileUtils;
 import cn.aircas.airproject.utils.LabelPointTypeConvertor;
 import cn.aircas.airproject.utils.ParseImageInfo;
-import cn.aircas.airproject.utils.XMLUtils;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.Value;
 
-import org.springframework.stereotype.Component;
+import java.io.File;
 
 /**
- * @ClassName: LabelParserForAIRCAS
- * @Description 对xml类型AIRCAS格式的标注文件格式进行解析
+ * @ClassName: AbstractLabelParser
+ * @Description TODO
  * @Author yzhan
- * @Date 2024/5/24 8:41
+ * @Date 2024/5/27 16:12
  * @Version 1.0
  */
 
 
-@Component
-public class LabelParserForAIRCAS extends AbstractLabelFileParser{
-
-
-    @Override
-    public boolean support(LabelFileType fileType, LabelFileFormat format) {
-        return (fileType == LabelFileType.XML && format == LabelFileFormat.AIRCAS);
-    }
-
+@Slf4j
+public abstract class AbstractLabelParser implements LabelParser, InitializingBean {
+    @Value(value = "${sys.rootDir}")
+    protected String rootDir;
+    protected String imageFullPath;
 
     @Override
-    protected LabelObject parseLabelFile() {
+    public String parseLabelFile(Object labelItem, String imagePath) {
 
-        XMLLabelObjectInfo labelObject = XMLUtils.parseXMLFromFile(XMLLabelObjectInfo.class, this.labelFullPath);
-        if(null == labelObject){
-            throw new RuntimeException("xml label AIRCAS format error");
+        if(false == beforeLabelItemParse(labelItem, imagePath)){
+            return null;
         }
 
-        return labelObject;
+        LabelObject labelObject = parseLabelFile();
+
+
+        if( false == afterLabelFileParse(labelObject)) {
+            return null;
+        }
+
+        return labelObject.toJSONObject().toJSONString();
     }
 
-    @Override
+    protected abstract boolean beforeLabelItemParse(Object labelItem, String imagePath);
+
+    protected abstract LabelObject parseLabelFile();
+
+    protected boolean checkImageFile( String imagePath){
+        this.imageFullPath = FileUtils.getStringPath(this.rootDir, imagePath);
+        if(false == new File(this.imageFullPath).exists()){
+            log.info("与标注文件匹配的图像文件{}不存在", this.imageFullPath);
+            return false;
+        }
+
+        return true;
+    }
+
+
     protected boolean afterLabelFileParse(LabelObject labelObject) {
         if(null == labelObject) {
             return false;
@@ -94,5 +113,11 @@ public class LabelParserForAIRCAS extends AbstractLabelFileParser{
         return true;
     }
 
-
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        if(null == this.rootDir){
+            //不能为null，可以为空字符串或者非空字符串
+            throw new  RuntimeException("rootDir不能为null，无法完成初始化");
+        }
+    }
 }

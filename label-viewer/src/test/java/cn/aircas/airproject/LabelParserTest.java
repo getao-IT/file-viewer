@@ -31,10 +31,12 @@ public class LabelParserTest {
 
     private static boolean canTest = true;
 
+    private String IMAGE_FILE = "00-WorkDir\\byte.tiff";
+
     private String XML_ARICAS_FILE = "00-WorkDir\\byte.xml";
     private String XML_VIF_FILE = "00-WorkDir\\test-vif.vif";
     private String XML_VOC_FILE = "00-WorkDir\\voc.xml";
-    private String IMAGE_FILE = "00-WorkDir\\byte.tiff";
+
 
     @Autowired
     private LabelProjectService labelProjectService;

@@ -1,20 +1,14 @@
 package cn.aircas.airproject.service.impl;
 
-import cn.aircas.airproject.config.labelParser.parsers.LabelFileParserComposite;
 import cn.aircas.airproject.config.labelParser.parsers.LabelParserComposite;
 import cn.aircas.airproject.entity.LabelFile.LabelObject;
-import cn.aircas.airproject.entity.LabelFile.VifLabelOjectInfo;
 import cn.aircas.airproject.entity.LabelFile.XMLLabelObjectInfo;
 import cn.aircas.airproject.entity.domain.*;
 import cn.aircas.airproject.entity.dto.ProgressContrDto;
 import cn.aircas.airproject.entity.emun.*;
-import cn.aircas.airproject.service.FileService;
 import cn.aircas.airproject.service.LabelProjectService;
-import cn.aircas.airproject.service.LabelTagService;
 import cn.aircas.airproject.service.ProgressService;
 import cn.aircas.airproject.utils.*;
-import cn.aircas.utils.image.geo.GeoUtils;
-import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import lombok.extern.slf4j.Slf4j;
@@ -29,7 +23,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -53,7 +46,7 @@ public class LabelProjectServiceImpl implements LabelProjectService {
     private LabelTagParentServiceImpl parentService;
 
     @Autowired
-    private LabelFileParserComposite labelparser;
+    private LabelParserComposite labelparser;
 
 
     /**
@@ -137,58 +130,11 @@ public class LabelProjectServiceImpl implements LabelProjectService {
         LabelFileFormat fileFormat = labelFilePath.endsWith("xml") ? LabelFileFormat.AIRCAS: LabelFileFormat.VIF;
 
 
-        if(labelparser.support(fileType, fileFormat)){
+        if(labelparser.support(fileType, fileFormat, LabelCategory.LABEL_FILE)){
             parseResult = labelparser.parseLabelFile(labelFilePath, imagePath);
         }
         return parseResult;
 
-
-//        String labelPath = FileUtils.getStringPath(this.rootDir, labelFilePath);
-//        if (!new File(labelPath).exists()) {
-//            return null;
-//        }
-//
-//        String imageFilePath = FileUtils.getStringPath(this.rootDir, imagePath);
-//        Class clazz = labelPath.endsWith("xml") ? XMLLabelObjectInfo.class : VifLabelOjectInfo.class;
-//        LabelObject labelObject = (LabelObject) XMLUtils.parseXMLFromFile(clazz, labelPath);
-//        if(null == labelObject){
-//            return "label info format error";
-//        }
-//        if(VifLabelOjectInfo.class == clazz){
-//            Method vifJsonToLabelInfo = clazz.getMethod("vifJsonToLabelInfo");
-//            JSONObject vifObject = (JSONObject) vifJsonToLabelInfo.invoke(labelObject);
-//            return vifObject.toJSONString();
-//        }
-//
-//        String coordinate = labelObject.getCoordinate();
-//        CoordinateConvertType coordinateConvertType = CoordinateConvertType.NO_ACTION;
-//        //如果标注点类型与图像坐标系不同
-//        if (!labelPointType.name().equalsIgnoreCase(coordinate)) {
-//            if (labelPointType == LabelPointType.GEODEGREE) {
-//                if (coordinate.equalsIgnoreCase(LabelPointType.PROJECTION.name()))
-//                    coordinateConvertType = CoordinateConvertType.PROJECTION_TO_LONLAT;
-//                else
-//                    coordinateConvertType = CoordinateConvertType.PIXEL_TO_LONLAT;
-//            }
-//            if (labelPointType == LabelPointType.PROJECTION) {
-//                if (coordinate.equalsIgnoreCase(LabelPointType.GEODEGREE.name()))
-//                    coordinateConvertType = CoordinateConvertType.LONLAT_TO_PROJECTION;
-//                else
-//                    coordinateConvertType = CoordinateConvertType.PIXEL_TO_PROJECTION;
-//            }
-//            if (labelPointType == LabelPointType.PIXEL) {
-//                if (coordinate.equalsIgnoreCase(LabelPointType.PROJECTION.name()))
-//                    coordinateConvertType = CoordinateConvertType.PROJECTION_TO_PIXEL;
-//                else
-//                    coordinateConvertType = CoordinateConvertType.LONLAT_TO_PIXEL;
-//            }
-//        } else {
-//            //如果图像坐标为像素，标注坐标为像素，则将像素进行翻转
-//            if (LabelPointType.PIXEL == labelPointType)
-//                coordinateConvertType = CoordinateConvertType.PIXEL_REVERSION;
-//        }
-//        LabelPointTypeConvertor.convertLabelPointType(imageFilePath, labelObject, coordinateConvertType);
-//        return labelObject.toJSONObject().toString();
     }
 
     @Override
@@ -196,7 +142,7 @@ public class LabelProjectServiceImpl implements LabelProjectService {
 
         String parseResult = null;
 
-        if(labelparser.support(fileType, fileFormat)){
+        if(labelparser.support(fileType, fileFormat, LabelCategory.LABEL_FILE)){
             parseResult = labelparser.parseLabelFile(labelPath, imagePath);
         }
         return parseResult;
@@ -518,84 +464,108 @@ public class LabelProjectServiceImpl implements LabelProjectService {
      * @return
      */
     @Override
-    public String importLabel(String imagePath, LabelPointType labelPointType, MultipartFile file) {
-        if (file.isEmpty()) {
-            log.error("导入数据为空：{}", file.getOriginalFilename());
-            return null;
-        }
-        LabelObject labelInfo = null;
-        try {
-            labelInfo = XMLUtils.parseXMLFromStream(file.getInputStream(), XMLLabelObjectInfo.class);
+    public String importLabel(String imagePath, LabelPointType labelPointType, MultipartFile file) throws IOException {
 
-            parentService.setIpAndDriver();
-            childrenService.setIpAndDriver();
-            JSONObject jsonLabel = JSONObject.parseObject(labelInfo.toJSONObject().toJSONString());
-            JSONArray object = jsonLabel.getJSONArray("object");
-            LabelTagParent parent = new LabelTagParent();
-            parent.setTag_name("其他");
-            LabelTagParent parentInfo = (LabelTagParent) parentService.queryList(LabelTagParent.class, parent).get(0);
-            JSONArray newObject = new JSONArray();
-            for (Object o : object) {
-                JSONObject oJson = JSONObject.parseObject(o.toString());
-                JSONObject possibleresult = oJson.getJSONArray("possibleresult").getJSONObject(0);
-                String name = possibleresult.getString("name");
-                LabelTagChildren params = new LabelTagChildren();
-                params.setTag_name(name);
-                List<Object> childrens = childrenService.queryList(LabelTagChildren.class, params);
-                if (childrens == null || childrens.size() == 0) {
-                    possibleresult.put("basicname", "其他");
-                    int parentId = parentInfo.getId();
-                    LabelTagChildren children = new LabelTagChildren();
-                    children.setParent_id(parentId);
-                    children.setTag_name(possibleresult.getString("name"));
-                    children.setProperties_name(possibleresult.getString("name"));
-                    children.setParenttag_name("其他");
-                    children.setProperties_color(SQLiteUtils.takeColorHex());
-                    childrenService.insert(children);
-                } else {
-                    LabelTagChildren children = (LabelTagChildren) childrens.get(0);
-                    possibleresult.put("basicname", children.getParenttag_name());
-                }
-                newObject.add(oJson);
-            }
-            jsonLabel.put("object", newObject);
-            labelInfo = jsonLabel.toJavaObject(XMLLabelObjectInfo.class);
-        } catch (IOException e) {
-            e.printStackTrace();
+        String parseResult = null;
+        String fileName = file.getOriginalFilename();
+
+        if (file.isEmpty()) {
+            log.error("导入数据为空：{}", fileName);
+            return parseResult;
         }
-        String coordinate = labelInfo.getCoordinate();
-        imagePath = FileUtils.getStringPath(this.rootDir, imagePath);
-        if (labelPointType == LabelPointType.GEODEGREE) {
-            if (coordinate.equalsIgnoreCase(LabelPointType.PIXEL.name())) {
-                labelInfo = LabelPointTypeConvertor.convertLabelPointType(imagePath, labelInfo, CoordinateConvertType.PIXEL_TO_LONLAT);
-            }
-            if (coordinate.equalsIgnoreCase(LabelPointType.PROJECTION.name())) {
-                labelInfo = LabelPointTypeConvertor.convertLabelPointType(imagePath, labelInfo, CoordinateConvertType.PROJECTION_TO_LONLAT);
-            }
+
+        String extension = StringUtils.substringAfterLast(fileName, ".");
+        LabelFileType fileType = null;
+        LabelFileFormat fileFormat = null;
+        switch (extension.toUpperCase()) {
+            case "VIF":
+                fileType = LabelFileType.XML;
+                fileFormat = LabelFileFormat.VIF;
+                break;
+            default:
+                fileType = LabelFileType.XML;
+                fileFormat = LabelFileFormat.AIRCAS;
         }
-        if (labelPointType == LabelPointType.PROJECTION) {
-            if (coordinate.equalsIgnoreCase(LabelPointType.PIXEL.name())) {
-                labelInfo = LabelPointTypeConvertor.convertLabelPointType(imagePath, labelInfo, CoordinateConvertType.PIXEL_TO_PROJECTION);
-            }
-            if (coordinate.equalsIgnoreCase(LabelPointType.GEODEGREE.name())) {
-                labelInfo = LabelPointTypeConvertor.convertLabelPointType(imagePath, labelInfo, CoordinateConvertType.LONLAT_TO_PROJECTION);
-            }
+        log.info("开始解析导入的文件（xml格式或vif格式）{}", fileName);
+        if(labelparser.support(fileType, fileFormat, LabelCategory.LABEL_STREAM)) {
+            parseResult = labelparser.parseLabelFile(file.getInputStream(), imagePath);
+            log.info("导入文件{}解析成功", fileName);
         }
-        if (labelPointType == LabelPointType.PIXEL) {
-                /*if (coordinate.equalsIgnoreCase(LabelPointType.PIXEL.name())) {
-                    labelInfo = LabelPointTypeConvertor.convertLabelPointType(imagePath, labelInfo, CoordinateConvertType.PIXEL_REVERSION);
-                }*/
-            if (coordinate.equalsIgnoreCase(LabelPointType.GEODEGREE.name())) {
-                labelInfo = LabelPointTypeConvertor.convertLabelPointType(imagePath, labelInfo, CoordinateConvertType.LONLAT_TO_PIXEL);
-            }
-            if (coordinate.equalsIgnoreCase(LabelPointType.PROJECTION.name())) {
-                labelInfo = LabelPointTypeConvertor.convertLabelPointType(imagePath, labelInfo, CoordinateConvertType.PROJECTION_TO_PIXEL);
-            }
-        }
-        if (labelPointType == LabelPointType.PIXEL && coordinate.equalsIgnoreCase(LabelPointType.PIXEL.name())) {
-            labelInfo = LabelPointTypeConvertor.convertLabelPointType(imagePath, labelInfo, CoordinateConvertType.PIXEL_REVERSION);
-        }
-        return labelInfo.toJSONObject().toJSONString();
+        return parseResult;
+
+//        LabelObject labelInfo = null;
+//        try {
+//            labelInfo = XMLUtils.parseXMLFromStream(file.getInputStream(), XMLLabelObjectInfo.class);
+//
+//            parentService.setIpAndDriver();
+//            childrenService.setIpAndDriver();
+//            JSONObject jsonLabel = JSONObject.parseObject(labelInfo.toJSONObject().toJSONString());
+//            JSONArray object = jsonLabel.getJSONArray("object");
+//            LabelTagParent parent = new LabelTagParent();
+//            parent.setTag_name("其他");
+//            LabelTagParent parentInfo = (LabelTagParent) parentService.queryList(LabelTagParent.class, parent).get(0);
+//            JSONArray newObject = new JSONArray();
+//            for (Object o : object) {
+//                JSONObject oJson = JSONObject.parseObject(o.toString());
+//                JSONObject possibleresult = oJson.getJSONArray("possibleresult").getJSONObject(0);
+//                String name = possibleresult.getString("name");
+//                LabelTagChildren params = new LabelTagChildren();
+//                params.setTag_name(name);
+//                List<Object> childrens = childrenService.queryList(LabelTagChildren.class, params);
+//                if (childrens == null || childrens.size() == 0) {
+//                    possibleresult.put("basicname", "其他");
+//                    int parentId = parentInfo.getId();
+//                    LabelTagChildren children = new LabelTagChildren();
+//                    children.setParent_id(parentId);
+//                    children.setTag_name(possibleresult.getString("name"));
+//                    children.setProperties_name(possibleresult.getString("name"));
+//                    children.setParenttag_name("其他");
+//                    children.setProperties_color(SQLiteUtils.takeColorHex());
+//                    childrenService.insert(children);
+//                } else {
+//                    LabelTagChildren children = (LabelTagChildren) childrens.get(0);
+//                    possibleresult.put("basicname", children.getParenttag_name());
+//                }
+//                newObject.add(oJson);
+//            }
+//            jsonLabel.put("object", newObject);
+//            labelInfo = jsonLabel.toJavaObject(XMLLabelObjectInfo.class);
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//        String coordinate = labelInfo.getCoordinate();
+//        imagePath = FileUtils.getStringPath(this.rootDir, imagePath);
+//        if (labelPointType == LabelPointType.GEODEGREE) {
+//            if (coordinate.equalsIgnoreCase(LabelPointType.PIXEL.name())) {
+//                labelInfo = LabelPointTypeConvertor.convertLabelPointType(imagePath, labelInfo, CoordinateConvertType.PIXEL_TO_LONLAT);
+//            }
+//            if (coordinate.equalsIgnoreCase(LabelPointType.PROJECTION.name())) {
+//                labelInfo = LabelPointTypeConvertor.convertLabelPointType(imagePath, labelInfo, CoordinateConvertType.PROJECTION_TO_LONLAT);
+//            }
+//        }
+//        if (labelPointType == LabelPointType.PROJECTION) {
+//            if (coordinate.equalsIgnoreCase(LabelPointType.PIXEL.name())) {
+//                labelInfo = LabelPointTypeConvertor.convertLabelPointType(imagePath, labelInfo, CoordinateConvertType.PIXEL_TO_PROJECTION);
+//            }
+//            if (coordinate.equalsIgnoreCase(LabelPointType.GEODEGREE.name())) {
+//                labelInfo = LabelPointTypeConvertor.convertLabelPointType(imagePath, labelInfo, CoordinateConvertType.LONLAT_TO_PROJECTION);
+//            }
+//        }
+//        if (labelPointType == LabelPointType.PIXEL) {
+//                /*if (coordinate.equalsIgnoreCase(LabelPointType.PIXEL.name())) {
+//                    labelInfo = LabelPointTypeConvertor.convertLabelPointType(imagePath, labelInfo, CoordinateConvertType.PIXEL_REVERSION);
+//                }*/
+//            if (coordinate.equalsIgnoreCase(LabelPointType.GEODEGREE.name())) {
+//                labelInfo = LabelPointTypeConvertor.convertLabelPointType(imagePath, labelInfo, CoordinateConvertType.LONLAT_TO_PIXEL);
+//            }
+//            if (coordinate.equalsIgnoreCase(LabelPointType.PROJECTION.name())) {
+//                labelInfo = LabelPointTypeConvertor.convertLabelPointType(imagePath, labelInfo, CoordinateConvertType.PROJECTION_TO_PIXEL);
+//            }
+//        }
+//        if (labelPointType == LabelPointType.PIXEL && coordinate.equalsIgnoreCase(LabelPointType.PIXEL.name())) {
+//            labelInfo = LabelPointTypeConvertor.convertLabelPointType(imagePath, labelInfo, CoordinateConvertType.PIXEL_REVERSION);
+//        }
+//        return labelInfo.toJSONObject().toJSONString();
     }
 
     @Override

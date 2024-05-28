@@ -1,10 +1,9 @@
 package cn.aircas.airproject.config.labelParser;
 
-import cn.aircas.airproject.config.labelParser.parsers.LabelFileParser;
-import cn.aircas.airproject.config.labelParser.parsers.LabelFileParserComposite;
+import cn.aircas.airproject.config.labelParser.parsers.LabelParser;
 import cn.aircas.airproject.config.labelParser.parsers.LabelParserComposite;
+import cn.aircas.airproject.config.labelParser.parsers.impl.LabelParserCompositeImpl;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -24,8 +23,8 @@ public class LabelFileParserConfiguration {
 
     @Autowired
     @Bean
-    public LabelFileParserComposite labelFileParserComposite(List<LabelFileParser> parses){
-        LabelParserComposite labelParserComposite = new LabelParserComposite(parses);
+    public LabelParserComposite labelFileParserComposite(List<LabelParser> parses){
+        LabelParserComposite labelParserComposite = new LabelParserCompositeImpl(parses);
         return labelParserComposite;
     }
 

@@ -1,5 +1,6 @@
 package cn.aircas.airproject.config.labelParser.parsers;
 
+import cn.aircas.airproject.entity.emun.LabelCategory;
 import cn.aircas.airproject.entity.emun.LabelFileFormat;
 import cn.aircas.airproject.entity.emun.LabelFileType;
 
@@ -12,10 +13,8 @@ import cn.aircas.airproject.entity.emun.LabelFileType;
  */
 
 
-public interface LabelFileParser {
-    boolean support(LabelFileType fileType, LabelFileFormat format);
+public interface LabelParser {
+    boolean support(LabelFileType fileType, LabelFileFormat format, LabelCategory category);
 
-    String parseLabelFile(String labelPath, String imagePath);
-
-    void setRootDir(String rootDir) ;
+    String parseLabelFile(Object labelItem, String imagePath);
 }

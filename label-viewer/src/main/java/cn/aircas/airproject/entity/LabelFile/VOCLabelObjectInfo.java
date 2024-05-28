@@ -64,10 +64,10 @@ public class VOCLabelObjectInfo implements LabelObject{
         public VOCLabelObject(double xmin, double ymin, double xmax, double ymax){
             points = new Points();
             points.setPoint(new ArrayList<>());
-            points.getPoint().add(xmin + ", " + ymax );
             points.getPoint().add(xmin + ", " + ymin );
-            points.getPoint().add(xmax + ", " + ymin );
+            points.getPoint().add(xmin + ", " + ymax );
             points.getPoint().add(xmax + ", " + ymax );
+            points.getPoint().add(xmax + ", " + ymin );
         }
 
         @JSONField(ordinal = 6)
