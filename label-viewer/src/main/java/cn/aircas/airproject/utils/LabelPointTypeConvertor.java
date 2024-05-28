@@ -49,7 +49,7 @@ public class LabelPointTypeConvertor {
 //                if (GeoUtils.isProjection(imagePath)){
 //                    coordination = GeoUtils.coordinateConvertor(coordination[0],coordination[1],dataset,GeoUtils.COORDINATE_PROJECTION);
 //                }
-                coordination = GeoUtils.convertCoordinateToPixel(coordination[0],coordination[1],dataset,null);
+                coordination = GeoUtils.convertCoordinateToPixel(coordination[0],coordination[1],dataset,GeoUtils.COORDINATE_LONLAT);
                 point[0] = coordination[0];
                 point[1] = coordination[1];
             }
@@ -181,7 +181,7 @@ public class LabelPointTypeConvertor {
         int ySize = dataset.getRasterYSize();
         for (double[][] pointValue : labelPointMap.values()) {
             for (double[] point : pointValue) {
-                point[0] = ySize - point[0];
+                point[1] = ySize - point[1];
             }
         }
         dataset.delete();
