@@ -9,17 +9,17 @@ public enum LabelFileType {
 
     XML(0), IMG(1), SHP(2);
 
-    private int code;
+    private int value;
 
-    public int getCode() {
-        return code;
+    public int getValue() {
+        return value;
     }
 
-    public void setCode(int code) {
-        this.code = code;
+    public void setValue(int value) {
+        this.value = value;
     }
 
-    LabelFileType(int code) {
-        this.code = code;
+    LabelFileType(int value) {
+        this.value = value;
     }
 }

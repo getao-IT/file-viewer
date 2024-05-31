@@ -13,13 +13,17 @@ public enum LabelFileFormat {
 
     AIRCAS(0), VOC(1), VIF(2);
 
-    private int code;
+    private int value;
 
-    private LabelFileFormat(int code){
-        this.code = code;
+    private LabelFileFormat(int value){
+        this.value = value;
     }
 
-    public int getCode() {
-        return this.code;
+    public int getValue() {
+        return value;
+    }
+
+    public void setValue(int value) {
+        this.value = value;
     }
 }
