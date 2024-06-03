@@ -192,6 +192,7 @@ public class ImageUtil {
                 if (new File(dstPath).exists()) {
                     dstPath = cn.aircas.airproject.utils.FileUtils.autoMakeIfFileRepeat(new File(dstPath)).getAbsolutePath();
                 }
+                System.out.println("dstPath = " + dstPath);
 
                 int bandCount = srcDataset.getRasterCount();
                 List<Integer> bandmapping = null;
@@ -206,7 +207,13 @@ public class ImageUtil {
                     bandmapping = new ArrayList<>(Arrays.asList(new Integer[]{partitionBoard,2*partitionBoard,3*partitionBoard}));
                 }
                 TranslateOptions translateOptions = getTranslateOptions(srcDataset, bandmapping, format);
-                gdal.Translate(dstPath, srcDataset, translateOptions, new GdalConverProgressCallback(progress));
+                Dataset translate = gdal.Translate(dstPath, srcDataset, translateOptions, new GdalConverProgressCallback(progress));
+                if(null == translate){
+                    System.out.println("转换后返回的dataset为null");
+                } else {
+                    System.out.println("转换成功");
+                }
+
 
                 srcDataset.FlushCache();
                 srcDataset.delete();
@@ -237,6 +244,19 @@ public class ImageUtil {
             bandMapping.add(1);
         }
 
+        int srcWidth = srcDataset.getRasterXSize();
+        int srcHeight = srcDataset.getRasterYSize();
+        double perWidth = 1.0;
+        double perHeight = 1.0;
+        if(srcWidth >65500){
+            perWidth = 65500/(double)srcWidth;
+        }
+        if(srcHeight > 65500){
+            perHeight = 65500 / (double)srcHeight;
+        }
+        perWidth = Math.floor(Math.min(perWidth, perHeight)*100);
+
+
         int bandCount = bandMapping.size();
         StringBuilder cmdSb = new StringBuilder();
         cmdSb.append("-ot Byte -of ");
@@ -256,6 +276,12 @@ public class ImageUtil {
             cmdSb.append(" ");
             cmdSb.append(minmax[1]);
             cmdSb.append(" 0 255");
+            cmdSb.append(" -outsize ");
+            cmdSb.append(perWidth);
+            cmdSb.append("%");
+            cmdSb.append(" ");
+            cmdSb.append(perWidth);
+            cmdSb.append("%");
         }
         return new TranslateOptions(gdal.ParseCommandLine(cmdSb.toString()));
     }

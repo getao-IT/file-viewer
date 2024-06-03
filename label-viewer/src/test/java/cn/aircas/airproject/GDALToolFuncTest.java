@@ -16,6 +16,8 @@ public class GDALToolFuncTest {
     private static String bytePath = "D:\\00-WorkDir\\byte.tiff";
     private static String f32Path = "D:\\00-WorkDir\\float32.tif";
     private static String f64Path = "D:\\00-WorkDir\\float64.tif";
+    private static String i16Path = "D:\\00-WorkDir\\int16.tif";
+    private static String u16Path = "D:\\00-WorkDir\\uint16.tif";
 
     /**
      *
@@ -47,6 +49,26 @@ public class GDALToolFuncTest {
     }
 
     @Test
+    public void testi16ToJpg() {
+        formatConverterTest(i16Path, "JPEG","int64 to jpg OK");
+    }
+
+    @Test
+    public void testi16ToPng(){
+        formatConverterTest(i16Path, "PNG","i16 to png OK");
+    }
+
+    @Test
+    public void testui16ToJpg() {
+        formatConverterTest(u16Path, "JPEG","uint64 to jpg OK");
+    }
+
+    @Test
+    public void testui16ToPng(){
+        formatConverterTest(u16Path, "PNG","ui16 to png OK");
+    }
+
+    @Test
     public void testByte2Png(){
         formatConverterTest(bytePath, "PNG","byte to png OK");
     }
@@ -60,4 +82,9 @@ public class GDALToolFuncTest {
     public void testf64ToPng(){
         formatConverterTest(f64Path, "PNG","f64 to png OK");
     }
+
+
+
+
+
 }
