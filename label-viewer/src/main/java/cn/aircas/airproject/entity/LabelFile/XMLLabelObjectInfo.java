@@ -60,7 +60,7 @@ public class XMLLabelObjectInfo implements LabelObject {
 
         @Data
         public static class PossibleResult {
-            private String basicname;
+            private String className;
             private String name;
             private String probability;
         }

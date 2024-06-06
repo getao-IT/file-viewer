@@ -14,7 +14,7 @@ spring:
 
 sys:
   rootPath: C:\Users\Administrator\Desktop
-  rootDir: C:\Users\Administrator\Desktop
+  rootDir: D:\
   uploadRootPath: C:\Users\Administrator\Desktop
 
 value:

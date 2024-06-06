@@ -4,7 +4,9 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.json.XML;
+
 import java.io.*;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -167,5 +169,18 @@ public class FileUtils {
             copy_num++;
         }
         return new File(cn.aircas.utils.file.FileUtils.getStringPath(destFile.getParentFile().getAbsolutePath(), newFileName));
+    }
+
+    /**
+     * 替换文件名称的后缀名
+     * @param srcFilePath 需要替换后缀名的文件名称
+     * @param newExtension 文件新的后缀名
+     * @return 替换了新的后缀名的文件名称
+     */
+    public static String replaceFileExtension(String srcFilePath, String newExtension){
+        if(false == srcFilePath.contains("."))
+            return srcFilePath;
+
+        return StringUtils.substringBeforeLast(srcFilePath, ".") +  (newExtension.contains(".")?newExtension:("."+newExtension));
     }
 }

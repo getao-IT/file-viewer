@@ -70,9 +70,13 @@ public class XMLUtils {
             JAXBContext jaxbContext = JAXBContext.newInstance(clazz);
             Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
             xmlObject = (T) unmarshaller.unmarshal(fileReader);
-        } catch (JAXBException | FileNotFoundException e) {
+        } catch (FileNotFoundException e) {
             log.error(e.getMessage());
-            log.error("xml文件转{} labelObjectInfo失败.",xmlFilePath);
+            log.error("xml文件不存在，转{} labelObjectInfo失败.",xmlFilePath);
+        } catch (JAXBException  e) {
+            log.error(e.getMessage());
+            System.out.println(e.getCause());
+            log.error("发生JAXBException异常，xml文件转{} labelObjectInfo失败.",xmlFilePath);
         }
         return xmlObject;
     }
