@@ -113,7 +113,8 @@ public class ParseImageInfo {
         SpatialReference destspatialReference =  srcspatialReference.CloneGeogCS();
         CoordinateTransformation coordinateTransformation = new CoordinateTransformation(srcspatialReference, destspatialReference);
         coordinateTransformation.TransformPoint(lonLat, x, y);
-        return lonLat;
+        String version = gdal.VersionInfo();
+        return version.startsWith("2") ? lonLat : new double[]{lonLat[1], lonLat[0]};
     }
 
     public static void main(String[] args) {

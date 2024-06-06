@@ -149,13 +149,13 @@ public class LabelPointTypeConvertor {
     }
 
     /**
-     * 将经纬度转换为投影坐标
+     * 将投影坐标转换为经纬度坐标
      * @param imagePath
      * @param labelPointMap
      * @return
      */
     public static Map<Integer,double[][]> projectionToLONLAT(String imagePath, Map<Integer,double[][]> labelPointMap){
-        log.info("开始进行影像{} 经纬度---->投影坐标转换",imagePath);
+        log.info("开始进行影像{} 投影坐标---->经纬度转换",imagePath);
         Dataset dataset = gdal.Open(imagePath);
         for (double[][] pointValue : labelPointMap.values()) {
             for (double[] point : pointValue) {
@@ -165,7 +165,7 @@ public class LabelPointTypeConvertor {
             }
         }
         dataset.delete();
-        log.info("影像{} 经纬度---->投影坐标转换完成",imagePath);
+        log.info("影像{} 投影坐标---->经纬度转换完成",imagePath);
         return labelPointMap;
     }
 
