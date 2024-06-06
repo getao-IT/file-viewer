@@ -277,10 +277,15 @@ public class ImageUtil {
             cmdSb.append(minmax[1]);
             cmdSb.append(" 0 255");
             cmdSb.append(" -outsize ");
-            cmdSb.append(perWidth);
+//            cmdSb.append(perWidth);
+//            cmdSb.append("%");
+//            cmdSb.append(" ");
+//            cmdSb.append(perWidth);
+//            cmdSb.append("%");
+            cmdSb.append(50);
             cmdSb.append("%");
             cmdSb.append(" ");
-            cmdSb.append(perWidth);
+            cmdSb.append(50);
             cmdSb.append("%");
         }
         return new TranslateOptions(gdal.ParseCommandLine(cmdSb.toString()));

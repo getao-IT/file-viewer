@@ -90,6 +90,7 @@ public class VOCLabelObjectInfo implements LabelObject{
 
         @Data
         public static class PossibleResult {
+            private String className;
             private String name;
             private String probability;
         }

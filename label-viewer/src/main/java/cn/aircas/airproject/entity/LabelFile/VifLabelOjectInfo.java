@@ -66,6 +66,7 @@ public class VifLabelOjectInfo implements LabelObject {
         @XmlTransient
         @Data
         public static class PossibleResult {
+            private String className;
             private String name;
             private String probability;
         }
