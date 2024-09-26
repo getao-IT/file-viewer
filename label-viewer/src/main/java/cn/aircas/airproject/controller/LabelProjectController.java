@@ -83,9 +83,10 @@ public class LabelProjectController {
     @Log(value = "获取文件夹下的文件和子文件夹")
     @GetMapping("/fileAndFolder")
     public CommonResult<List<FileAndFolder>> getFileAndFoderList(String path){
+        // TODO 临时救急，需改回，已改回，但是前端需要将状态码改为int类型
         List<FileAndFolder> folderList = labelProjectService.getFileAndFolderList(path);
         if (folderList == null)
-            return new CommonResult<List<FileAndFolder>>().data(new ArrayList<>()).success(ResultCode.FAIL_PERMISSION_DENIED).message("没有对该路径的访问权限!");
+            return new CommonResult<List<FileAndFolder>>().data(new ArrayList<>()).fail(ResultCode.FAIL_PERMISSION_DENIED).message("没有对该路径的访问权限!");
         else
             return new CommonResult<List<FileAndFolder>>().data(folderList).success(ResultCode.SUCCESS).message("获取文件和文件夹数据成功!");
     }

@@ -175,6 +175,7 @@ public class LabelProjectServiceImpl implements LabelProjectService {
     @Override
     public List<FileAndFolder> getFileAndFolderList(String path) {
         CommonResult<com.alibaba.fastjson.JSONObject> userInfo = userService.getUserInfoByToken(request.getHeader("token"));
+        //TODO 后期需要改回来 对文件的访问权限，已经改回，但是前端需要将状态码改为int
         boolean isAllowAccess = fileUtils.isAllowAccess(path, userInfo.getData().getString("id"));
         if (!isAllowAccess) {
             return null;
