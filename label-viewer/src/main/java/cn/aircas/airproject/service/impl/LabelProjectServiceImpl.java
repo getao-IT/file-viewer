@@ -7,7 +7,6 @@ import cn.aircas.airproject.service.FileTransferProgressInfoService;
 import cn.aircas.airproject.utils.*;
 import cn.aircas.airproject.entity.emun.LabelPointType;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.jcraft.jsch.UserInfo;
 import de.odysseus.staxon.json.JsonXMLConfig;
 import de.odysseus.staxon.json.JsonXMLConfigBuilder;
 import de.odysseus.staxon.json.JsonXMLInputFactory;
@@ -23,6 +22,7 @@ import org.gdal.gdal.gdal;
 import org.json.XML;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.*;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -43,8 +43,11 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 
+
+
 @Slf4j
 @Service
+@PropertySource(value = "classpath:/application.yml")
 public class LabelProjectServiceImpl implements LabelProjectService {
 
     @Value( value = "${sys.rootDir}")
@@ -52,6 +55,9 @@ public class LabelProjectServiceImpl implements LabelProjectService {
 
     @Value( value = "${value.api.download}")
     private String download;
+
+    @Value(value = "${value.allow-access.enabled}")
+    private boolean allowAccess;
 
     @Autowired
     private FileUtils fileUtils;
@@ -174,11 +180,13 @@ public class LabelProjectServiceImpl implements LabelProjectService {
 
     @Override
     public List<FileAndFolder> getFileAndFolderList(String path) {
-        CommonResult<com.alibaba.fastjson.JSONObject> userInfo = userService.getUserInfoByToken(request.getHeader("token"));
         //TODO 后期需要改回来 对文件的访问权限，已经改回，但是前端需要将状态码改为int
-        boolean isAllowAccess = fileUtils.isAllowAccess(path, userInfo.getData().getString("id"));
-        if (!isAllowAccess) {
-            return null;
+        if (allowAccess) {
+            CommonResult<com.alibaba.fastjson.JSONObject> userInfo = userService.getUserInfoByToken(request.getHeader("token"));
+            boolean isAllowAccess = fileUtils.isAllowAccess(path, userInfo.getData().getString("id"));
+            if (!isAllowAccess) {
+                return null;
+            }
         }
         String relativePath = StringUtils.isBlank(path) ? File.separator : path;
         //path = FilenameUtils.normalizeNoEndSeparator(this.rootDir + File.separator + path);

@@ -497,12 +497,15 @@ public class FileUtils {
      * @return
      */
     public boolean isAllowAccess(String path, String userId) {
-        if (path.startsWith(airStudioAccess.get(0)) || path.startsWith(airStudioAccess.get(1))) {
-            return true;
+        for (String studioAccess : airStudioAccess) {
+            if (path.startsWith(studioAccess)) {
+                return true;
+            }
         }
-
-        if (!path.contains(airPaiAccess.get(0)) || !path.contains(airPaiAccess.get(1))) {
-            return false;
+        for (String paiAccess : airPaiAccess) {
+            if (!path.contains(paiAccess)) {
+                return false;
+            }
         }
         String findUserId = path.substring(airPaiAccess.get(0).length(), path.lastIndexOf(airPaiAccess.get(1)));
         String regx = airPaiAccess.get(0)+"[0-9]+"+airPaiAccess.get(1)+"[0-9]"+".*";

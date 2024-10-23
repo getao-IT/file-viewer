@@ -17,7 +17,7 @@ spring:
       enabled: true
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://192.168.9.64:32189/geodl_iecas?useSSL=false&useUnicode=true&characterEncoding=utf8
+    url: jdbc:postgresql://127.0.0.1:5432/geoal_iecas?useSSL=false&useUnicode=true&characterEncoding=utf8
     username: iecas
     password: 123456
 
@@ -51,6 +51,7 @@ value:
     - /root
     - /mnt
   allow-access:
+    enabled: false
     air-studio: /var/nfs/general/data/AirPAI/AirPAI_Data/componentsD/
     #air-pai: /var/nfs/general/data/airpipeline/base/external/,/template/,/code
     air-pai: /mnt/zhisuan_nfs/KTY/airproject/data/airpipeline/base/external/,/template/,/code
