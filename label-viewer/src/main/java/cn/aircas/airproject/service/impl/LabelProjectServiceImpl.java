@@ -189,7 +189,7 @@ public class LabelProjectServiceImpl implements LabelProjectService {
             }
         }
         String relativePath = StringUtils.isBlank(path) ? File.separator : path;
-        //path = FilenameUtils.normalizeNoEndSeparator(this.rootDir + File.separator + path);
+        path = FileUtils.getStringPath(this.rootDir, path);
         //path = "/var/nfs/general/data/AirPAI/AirPAI_Data/components";
         File[] files = new File(path).listFiles();
         List<FileAndFolder> fileAndFolderList = new ArrayList<>();
@@ -482,8 +482,8 @@ public class LabelProjectServiceImpl implements LabelProjectService {
     @Log("复制文件")
     @Override
     public void copyFileAndFolder(String srcPath, String destPath) {
-        //srcPath = FileUtils.getStringPath(this.rootDir, srcPath);
-        //destPath = FileUtils.getStringPath(this.rootDir, destPath);
+        srcPath = FileUtils.getStringPath(this.rootDir, srcPath);
+        destPath = FileUtils.getStringPath(this.rootDir, destPath);
         File file = new File(srcPath);
         if (!file.exists()) {
             return;
@@ -535,7 +535,7 @@ public class LabelProjectServiceImpl implements LabelProjectService {
      */
     @Override
     public boolean deleteFileOrFolder(String srcPath) {
-        //String path = FileUtils.getStringPath(this.rootDir, srcPath);
+        srcPath = FileUtils.getStringPath(this.rootDir, srcPath);
         File file = new File(srcPath);
         if (!file.exists()) {
             return false;
@@ -571,7 +571,7 @@ public class LabelProjectServiceImpl implements LabelProjectService {
      */
     @Override
     public String fileRename(String oldName, String newName) {
-        //String srcPath = FileUtils.getStringPath(this.rootDir, oldName);
+        oldName = FileUtils.getStringPath(this.rootDir, oldName);
         File oldFile = new File(oldName);
         if (!oldFile.exists()) {
             return "名称为'" + oldName + "'的文件不存在！";
@@ -608,7 +608,7 @@ public class LabelProjectServiceImpl implements LabelProjectService {
 
     @Override
     public FileInfo getFileInfo(String path) {
-        //path = FileUtils.getStringPath(this.rootDir, path);
+        path = FileUtils.getStringPath(this.rootDir, path);
         File file = new File(path);
         if (!file.exists()) {
             log.error("名称为'" + FilenameUtils.getName(file.getAbsolutePath()) + "'的文件不存在");
@@ -635,7 +635,7 @@ public class LabelProjectServiceImpl implements LabelProjectService {
 
     @Override
     public boolean createFile(String path) {
-        //path = FileUtils.getStringPath(this.rootDir, path);
+        path = FileUtils.getStringPath(this.rootDir, path);
         File file = new File(path);
         try {
             if (!file.exists()) {
@@ -653,7 +653,7 @@ public class LabelProjectServiceImpl implements LabelProjectService {
 
     @Override
     public boolean createFolder(String path) {
-        //path = FileUtils.getStringPath(this.rootDir, path);
+        path = FileUtils.getStringPath(this.rootDir, path);
         try {
             Files.createDirectory(Paths.get(path));
         } catch (IOException e) {
@@ -671,7 +671,7 @@ public class LabelProjectServiceImpl implements LabelProjectService {
      */
     @Override
     public String getContent(String path) {
-        //path = FileUtils.getStringPath(this.rootDir, path);
+        path = FileUtils.getStringPath(this.rootDir, path);
         //path = path.replace("/", "\\");
         File file = new File(path);
         if (!file.exists()) {
@@ -880,7 +880,7 @@ public class LabelProjectServiceImpl implements LabelProjectService {
     @Override
     public JSONObject getFileContent(String path) {
         JSONObject result = new JSONObject();
-        //path = FileUtils.getStringPath(this.rootDir, path);
+        path = FileUtils.getStringPath(this.rootDir, path);
         File file = new File(path);
         if (!file.exists()) {
             return null;
@@ -949,7 +949,7 @@ public class LabelProjectServiceImpl implements LabelProjectService {
      */
     @Override
     public boolean writeFile(String path, String content, boolean append) {
-        //path = FileUtils.getStringPath(this.rootDir, path);
+        path = FileUtils.getStringPath(this.rootDir, path);
         File file = new File(path);
         if (!file.exists() || !file.isFile()) {
             return false;
